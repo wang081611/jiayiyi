@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>开奖预测综合系统</title>
+<style>
+/* ====== 全局基础 ====== */
+body { margin: 0; padding: 0; }
+.module-container { display: flex; height: 100vh; }
+.module-sidebar { width: 200px; background: #1a1a2e; padding: 20px 0; }
+.module-sidebar h3 { color: #fff; padding: 0 20px; margin-bottom: 20px; font-size: 14px; }
+.module-nav { list-style: none; padding: 0; margin: 0; }
+.module-nav li { padding: 12px 20px; cursor: pointer; color: #888; border-left: 3px solid transparent; }
+.module-nav li:hover { background: rgba(255,255,255,0.05); }
+.module-nav li.active { color: #e94560; border-left-color: #e94560; background: rgba(233,69,96,0.1); }
+.module-main { flex: 1; overflow: hidden; }
+.module-content { display: none; height: 100%; overflow-y: auto; }
+.module-content.active { display: block; }
+
+/* ====== pattern模块样式 ====== */
+#pattern-module { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); min-height: 100vh; padding: 30px 20px; color: white; }
+#pattern-module .container { max-width: 1000px; margin: 0 auto; }
+#pattern-module h1 { text-align: center; font-size: 2.5rem; margin-bottom: 30px; background: linear-gradient(90deg, #ff6b6b, #ffd93d); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+#pattern-module .sequence-display { background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 25px; margin-bottom: 25px; }
+#pattern-module .sequence-title { font-size: 1.3rem; color: #ffd93d; margin-bottom: 15px; }
+#pattern-module .sequence-list { display: flex; flex-wrap: wrap; gap: 8px; }
+#pattern-module .sequence-item { background: rgba(0, 0, 0, 0.3); padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; }
+#pattern-module .sequence-item.current { background: rgba(107, 203, 119, 0.4); border: 2px solid #6bcb77; }
+#pattern-module .result-panel { background: rgba(107, 203, 119, 0.2); border-radius: 15px; padding: 25px; margin-bottom: 25px; border: 2px solid rgba(107, 203, 119, 0.3); }
+#pattern-module .result-title { font-size: 1.3rem; color: #6bcb77; margin-bottom: 15px; }
+#pattern-module .result-equation { font-size: 1.5rem; margin: 15px 0; padding: 15px; background: rgba(0, 0, 0, 0.3); border-radius: 8px; }
+#pattern-module .btn { padding: 12px 30px; border: none; border-radius: 25px; font-size: 1rem; cursor: pointer; transition: all 0.3s; }
+#pattern-module .btn-primary { background: linear-gradient(90deg, #ff6b6b, #ffd93d); color: white; }
+#pattern-module .btn-secondary { background: linear-gradient(90deg, #48a3da, #6bcb77); color: white; }
+#pattern-module .btn:hover { transform: scale(1.05); }
+#pattern-module .error-analysis { background: rgba(255, 107, 107, 0.2); border-radius: 15px; padding: 20px; margin: 15px 0; border-left: 4px solid #ff6b6b; }
+#pattern-module .error-analysis-title { color: #ff6b6b; font-size: 1.1rem; margin-bottom: 10px; }
+#pattern-module .error-analysis-content { color: #ccc; font-size: 0.95rem; line-height: 1.6; }
+#pattern-module .auto-fetch-panel { background: rgba(72, 163, 218, 0.2); border-radius: 15px; padding: 20px; margin-bottom: 20px; }
+#pattern-module .fetch-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+#pattern-module .countdown { font-size: 1.5rem; color: #ff6b6b; font-weight: bold; }
+#pattern-module .status-indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+#pattern-module .status-online { background: #6bcb77; animation: pulse 1.5s infinite; }
+#pattern-module .status-offline { background: #ff6b6b; }
+#pattern-module .opentime-display { font-size: 1rem; color: #6bcb77; margin-left: 15px; }
+#pattern-module .auto-badge { display: inline-block; background: #6bcb77; color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; margin-left: 10px; }
+#pattern-module .success-box { background: rgba(107, 203, 119, 0.3); border: 2px solid #6bcb77; border-radius: 10px; padding: 20px; margin-top: 15px; }
+#pattern-module .transition-analysis { background: rgba(72, 163, 218, 0.2); border-radius: 15px; padding: 20px; margin: 15px 0; border-left: 4px solid #48a3da; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+/* ====== 智能预测模块样式 ====== */
+#smart-module { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); min-height: 100vh; padding: 20px; color: white; }
+#smart-module .container { max-width: 1200px; margin: 0 auto; }
+#smart-module h1 { text-align: center; font-size: 2rem; margin-bottom: 20px; background: linear-gradient(90deg, #ff6b6b, #ffd93d); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+#smart-module .status-panel { background: rgba(72, 163, 218, 0.2); border-radius: 15px; padding: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; }
+#smart-module .status-dot { width: 12px; height: 12px; border-radius: 50%; background: #ff6b6b; animation: pulse 1.5s infinite; }
+#smart-module .status-dot.online { background: #6bcb77; }
+#smart-module .prediction-panel { background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 20px; margin-bottom: 20px; }
+#smart-module .prediction-title { font-size: 1.3rem; color: #ffd93d; margin-bottom: 15px; }
+#smart-module .btn { padding: 10px 20px; border: none; border-radius: 20px; font-size: 0.9rem; cursor: pointer; background: linear-gradient(90deg, #48a3da, #6bcb77); color: white; }
+#smart-module .btn:hover { transform: scale(1.05); }
+
+/* ====== 开奖模块样式 ====== */
+#kaijiang-module { background: #f7f9fc; color: #1f2937; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, "Noto Sans SC", sans-serif; font-size: 13px; }
+#kaijiang-module .container { max-width: 600px; margin: 0 auto; padding: 12px; }
+#kaijiang-module .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+#kaijiang-module .logo { font-weight: 700; font-size: 16px; color: #2563eb; margin-bottom: 10px; }
+#kaijiang-module .current { text-align: center; }
+#kaijiang-module .current .nums { font-size: 28px; font-weight: 700; color: #2563eb; }
+#kaijiang-module .current .tag { display: inline-block; background: #e6efff; color: #2563eb; padding: 4px 16px; border-radius: 999px; font-weight: 700; margin: 8px 0; }
+#kaijiang-module .current .time { font-size: 12px; color: #6b7280; }
+#kaijiang-module .prediction { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border-radius: 12px; padding: 20px; text-align: center; margin: 10px 0; }
+#kaijiang-module .prediction .nums { font-size: 32px; font-weight: 700; }
+#kaijiang-module .analysis-content { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; max-height: 250px; overflow-y: auto; font-size: 12px; line-height: 1.8; }
+#kaijiang-module .analysis-step { margin-bottom: 6px; padding-left: 10px; border-left: 3px solid #2563eb; }
+#kaijiang-module .history table { width: 100%; border-collapse: collapse; font-size: 11px; }
+#kaijiang-module .history th, .history td { padding: 6px 8px; text-align: center; border: 1px solid #e5e7eb; }
+#kaijiang-module .history th { background: #e6efff; color: #2563eb; }
+#kaijiang-module .history td.correct { color: #16a34a; font-weight: 600; }
+#kaijiang-module .history td.wrong { color: #ef4444; }
+#kaijiang-module .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+#kaijiang-module .modal-overlay.show { display: flex; }
+#kaijiang-module .modal-content { background: white; border-radius: 12px; padding: 20px; min-width: 280px; }
+#kaijiang-module .period-item { padding: 4px 10px; background: #e6efff; border-radius: 4px; font-size: 11px; color: #2563eb; cursor: pointer; }
+#kaijiang-module .period-item.latest { background: #2563eb; color: white; }
+</style>
+</head>
+<body>
+<div class="module-container">
+  <div class="module-sidebar">
+    <h3>📦 模块列表</h3>
+    <ul class="module-nav">
+      <li class="active" onclick="showModule('pattern')">pattern</li>
+      <li onclick="showModule('smart')">智能预测</li>
+      <li onclick="showModule('kaijiang')">开奖模块</li>
+    </ul>
+  </div>
+  <div class="module-main">
+
+    <!-- ====== pattern模块 ====== -->
+    <div id="pattern-module" class="module-content active">
+      <div class="container">
+        <h1>🔢 数字规律分析</h1>
+
+        <div class="auto-fetch-panel">
+          <div class="fetch-controls">
+            <span class="status-indicator status-offline" id="p-statusIndicator"></span>
+            <span id="p-statusText">正在连接...</span>
+            <span id="p-opentimeDisplay" class="opentime-display"></span>
+            <span class="auto-badge" id="p-autoBadge" style="display:none;">自动获取中</span>
+            <button class="btn btn-secondary" id="p-btnStart" onclick="Pattern.startAutoFetch()">🔄 启动</button>
+            <button class="btn btn-secondary" id="p-btnStop" onclick="Pattern.stopAutoFetch()" style="display:none;">⏹ 停止</button>
+            <span id="p-countdown" class="countdown"></span>
+          </div>
+        </div>
+
+        <div class="sequence-display">
+          <div class="sequence-title">📊 近期开奖序列</div>
+          <div class="sequence-list" id="p-sequenceList">
+            <span style="color:#888;">加载中...</span>
+          </div>
+        </div>
+
+        <div class="result-panel">
+          <div class="result-title">📋 分析结果</div>
+          <div id="resultPanel">
+            <div id="predictionResult" class="result-equation" style="text-align:center; color:#888;">
+              正在分析...
+            </div>
+          </div>
+        </div>
+
+        <div class="input-section">
+          <div class="sequence-title">📝 手动验证</div>
+          <div style="display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap;">
+            <input type="number" id="p-correctNum1" class="number-input" min="0" max="9" placeholder="?" style="width:60px;height:60px;font-size:1.5rem;text-align:center;background:rgba(0,0,0,0.3);border:2px solid rgba(255,255,255,0.2);border-radius:10px;color:white;">
+            <span style="font-size:2rem;color:#ff6b6b;">+</span>
+            <input type="number" id="p-correctNum2" class="number-input" min="0" max="9" placeholder="?" style="width:60px;height:60px;font-size:1.5rem;text-align:center;background:rgba(0,0,0,0.3);border:2px solid rgba(255,255,255,0.2);border-radius:10px;color:white;">
+            <span style="font-size:2rem;color:#ff6b6b;">+</span>
+            <input type="number" id="p-correctNum3" class="number-input" min="0" max="9" placeholder="?" style="width:60px;height:60px;font-size:1.5rem;text-align:center;background:rgba(0,0,0,0.3);border:2px solid rgba(255,255,255,0.2);border-radius:10px;color:white;">
+            <span style="font-size:2rem;color:#ffd93d;">=</span>
+            <span id="p-correctSum" style="font-size:2rem;color:#6bcb77;font-weight:bold;">?</span>
+            <button class="btn btn-primary" onclick="Pattern.confirmActual()" style="margin-left:15px;">确认开奖结果</button>
+          </div>
+        </div>
+
+        <div class="algorithm-analysis">
+          <div class="algorithm-title">🧠 算法分析</div>
+          <div id="algorithmContent" class="algorithm-content" style="color:#ccc;line-height:1.8;">
+            等待分析...
+          </div>
+        </div>
+
+        <div style="margin-top:20px; background:rgba(255,255,255,0.05); border-radius:15px; padding:15px;">
+          <div style="color:#ffd93d;margin-bottom:10px;">📈 预测准确率统计</div>
+          <div id="p-accuracyStats" style="color:#ccc;font-size:0.9rem;">
+            暂无数据
+          </div>
+        </div>
+
+        <div style="margin-top:20px; background:rgba(255,255,255,0.05); border-radius:15px; padding:15px;">
+          <div style="color:#ffd93d;margin-bottom:10px;">📋 历史预测</div>
+          <div id="p-historyTable" style="max-height:200px; overflow-y:auto; color:#ccc;font-size:0.85rem;">
+            暂无记录
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== 智能预测模块 ====== -->
+    <div id="smart-module" class="module-content">
+      <div class="container">
+        <h1>🎯 智能预测系统</h1>
+
+        <div class="status-panel">
+          <div style="display:flex;align-items:center;gap:15px;">
+            <span class="status-dot" id="s-statusDot"></span>
+            <span id="s-status">系统就绪</span>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn" onclick="Smart.startAutoFetch()">🚀 启动预测</button>
+            <button class="btn" onclick="Smart.stopAutoFetch()" id="s-stopBtn" style="display:none;background:#ff6b6b;">⏹ 停止</button>
+          </div>
+        </div>
+
+        <div class="prediction-panel">
+          <div class="prediction-title">🎲 当前预测</div>
+          <div id="s-predictionContent" style="text-align:center; padding:30px; color:#888;">
+            点击"启动预测"开始分析
+          </div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.1); border-radius:15px; padding:20px;">
+          <div style="color:#ffd93d;margin-bottom:15px;">🔍 预测分析日志</div>
+          <div id="s-analysisLog" style="max-height:200px; overflow-y:auto; font-size:0.85rem; line-height:1.8; color:#ccc;">
+            等待启动...
+          </div>
+        </div>
+
+        <div style="margin-top:20px; background:rgba(255,255,255,0.1); border-radius:15px; padding:20px;">
+          <div style="color:#ffd93d;margin-bottom:15px;">📊 历史预测记录</div>
+          <div id="s-historyRecords" style="max-height:200px; overflow-y:auto; font-size:0.85rem; color:#ccc;">
+            暂无记录
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== 开奖模块 ====== -->
+    <div id="kaijiang-module" class="module-content">
+      <div class="container">
+        <div class="card">
+          <div class="logo">🎯 开奖预测系统</div>
+          <div class="current">
+            <div class="period">最新：<span id="k-cur-period">--</span> 期</div>
+            <div class="nums"><span id="k-cur-nums">--+--+--</span>=<span id="k-cur-sum">--</span></div>
+            <div class="tag" id="k-cur-tag">-- + --</div>
+            <div class="time">开奖时间：<span id="k-cur-time">--</span></div>
+            <div id="k-cd" class="countdown" style="display:none;">距下一期：<span id="k-cd-txt">--分--秒</span></div>
+          </div>
+        </div>
+
+        <div class="card prediction">
+          <div class="label">下一期预测</div>
+          <div class="nums" id="k-pred-nums">计算中...</div>
+          <div id="k-pred-analysis" class="analysis" style="font-size:11px;opacity:0.8;margin-top:10px;"></div>
+        </div>
+
+        <div class="card analysis-section">
+          <div class="analysis-title">🔍 分析过程</div>
+          <div id="k-analysis-content" class="analysis-content">
+            <div style="color:#6b7280;">加载中...</div>
+          </div>
+        </div>
+
+        <div class="card history">
+          <div class="analysis-title">📋 预测历史</div>
+          <table>
+            <thead>
+              <tr>
+                <th>期号</th><th>预测</th><th>实际</th><th>命中</th>
+              </tr>
+            </thead>
+            <tbody id="k-history-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="card" style="margin-top:10px;">
+          <div class="analysis-title">📊 历史期号</div>
+          <div id="k-periods-list" class="periods-list"></div>
+        </div>
+      </div>
+
+      <div id="k-modal" class="modal-overlay">
+        <div class="modal-content">
+          <div class="modal-header" style="display:flex;justify-content:space-between;margin-bottom:12px;">
+            <span style="font-weight:700;color:#2563eb;">开奖详情</span>
+            <button onclick="Kaijiang.closeModal()" style="width:28px;height:28px;border-radius:50%;border:none;background:#e5e7eb;cursor:pointer;">×</button>
+          </div>
+          <div style="text-align:center;">
+            <div id="k-modal-period" style="font-size:18px;font-weight:700;margin-bottom:10px;">--</div>
+            <div id="k-modal-nums" style="font-size:24px;font-weight:700;color:#2563eb;margin-bottom:8px;">--+--+--</div>
+            <div id="k-modal-tag" style="display:inline-block;background:#e6efff;color:#2563eb;padding:4px 12px;border-radius:999px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function showModule(name) {
+  document.querySelectorAll('.module-nav li').forEach(li => li.classList.remove('active'));
+  document.querySelectorAll('.module-content').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.module-nav li').forEach(li => {
+    if(li.textContent === (name === 'pattern' ? 'pattern' : name === 'smart' ? '智能预测' : '开奖模块')) {
+      li.classList.add('active');
+    }
+  });
+  document.getElementById(name + '-module').classList.add('active');
+}
+
+// 手动绑定导航点击
+document.querySelectorAll('.module-nav li').forEach((li, idx) => {
+  li.onclick = () => {
+    const names = ['pattern', 'smart', 'kaijiang'];
+    showModule(names[idx]);
+  };
+});
+</script>
+
+<!-- ========== pattern模块JS ========== -->
+<script>
+const Pattern = (function() {
+  const API_URL = 'https://super.pc28998.com/history/JND28';
+  let autoFetchInterval = null;
+  let sequenceData = [];
+  let latestExpect = null;
+  let lastFetchedExpect = null;
+  let history = [];
+  let predictionHistory = [];
+  let errorRecords = [];
+  let algorithmAccuracy = {};
+  let currentPrediction = null;
+  let lastVerifiedExpect = null;
+  let countdownInterval = null;
+  let lastOpentime = null;
+
+  function updateOnlineStatus(online) {
+    document.getElementById('p-statusIndicator').className = 'status-indicator ' + (online ? 'status-online' : 'status-offline');
+    document.getElementById('p-statusText').textContent = online ? '在线' : '离线';
+    document.getElementById('p-autoBadge').style.display = online ? 'inline-block' : 'none';
+    document.getElementById('p-btnStart').style.display = online ? 'none' : 'inline-block';
+    document.getElementById('p-btnStop').style.display = online ? 'inline-block' : 'none';
+  }
+
+  function updateOpentimeDisplay(opentime) {
+    if (!opentime) return;
+    const display = document.getElementById('p-opentimeDisplay');
+    const date = new Date(opentime);
+    const pad = n => String(n).padStart(2, '0');
+    display.textContent = `开奖: ${pad(date.getMonth()+1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    lastOpentime = opentime;
+    startCountdown();
+  }
+
+  function startCountdown() {
+    if (countdownInterval) clearInterval(countdownInterval);
+    const update = () => {
+      if (!lastOpentime) return;
+      const interval = 210 * 1000;
+      const now = Date.now();
+      const elapsed = now - lastOpentime;
+      const remaining = interval - (elapsed % interval);
+      const seconds = Math.floor(remaining / 1000);
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      const el = document.getElementById('p-countdown');
+      if (el) {
+        el.style.color = remaining < 30000 ? '#ff6b6b' : '#ffd93d';
+        el.textContent = `距下期: ${mins}分${String(secs).padStart(2,'0')}秒`;
+      }
+    };
+    update();
+    countdownInterval = setInterval(update, 1000);
+  }
+
+  async function fetchData() {
+    try {
+      const resp = await fetch(API_URL);
+      if (!resp.ok) throw new Error('网络错误');
+      const json = await resp.json();
+      if (json.code !== 1 || !json.data) throw new Error('数据格式错误');
+      const newData = extractArray(json.data).slice(0, 50).map(item => ({
+        expect: item.expect,
+        opencode: item.opencode,
+        opentime: item.opentime,
+        nums: parseNums(item.opencode)
+      })).filter(item => item.nums.length >= 3);
+
+      if (newData.length > 0) {
+        if (latestExpect && latestExpect !== newData[0].expect) {
+          const oldLatest = history.find(h => h.expect === latestExpect);
+          if (oldLatest && currentPrediction) {
+            verifyAndAnalyze(oldLatest, currentPrediction);
+          }
+        }
+
+        latestExpect = newData[0].expect;
+        lastFetchedExpect = latestExpect;
+        history = newData;
+
+        const latestData = history.find(h => h.expect === latestExpect);
+        if (latestData) {
+          updateOpentimeDisplay(latestData.opentime);
+        }
+
+        updateSequenceFromHistory();
+        analyzeAndPredict();
+        updateOnlineStatus(true);
+      }
+    } catch (e) {
+      console.error('获取数据失败:', e);
+      updateOnlineStatus(false);
+    }
+  }
+
+  function extractArray(res) {
+    if (Array.isArray(res)) return res;
+    if (res && typeof res === 'object') {
+      for (const k of ['data', 'items', 'list', 'results', 'records']) {
+        if (Array.isArray(res[k])) return res[k];
+      }
+      for (const k in res) if (Array.isArray(res[k])) return res[k];
+    }
+    return [];
+  }
+
+  function parseNums(opencode) {
+    if (!opencode) return [];
+    return String(opencode).split(',').map(s => parseInt(s.trim(), 10) || 0);
+  }
+
+  function updateSequenceFromHistory() {
+    sequenceData = history.slice(0, 20).map(h => h.nums);
+    updateSequenceDisplay();
+  }
+
+  function updateSequenceDisplay() {
+    const container = document.getElementById('p-sequenceList');
+    if (!container || sequenceData.length === 0) return;
+
+    container.innerHTML = sequenceData.map((nums, i) => {
+      const sum = nums.reduce((a, b) => a + b, 0);
+      const isCurrent = i === 0;
+      return `<div class="sequence-item ${isCurrent ? 'current' : ''}" style="cursor:pointer;" onclick="Pattern.showDetail(${i})">
+        ${nums.join('+')}=${sum} <small style="opacity:0.7">[${history[i]?.expect || ''}]</small>
+      </div>`;
+    }).join('');
+  }
+
+  function showDetail(index) {
+    if (!history[index]) return;
+    const item = history[index];
+    const nums = item.nums;
+    const sum = nums.reduce((a, b) => a + b, 0);
+    const tag = sum >= 14 ? (sum % 2 === 0 ? '大+双' : '大+单') : (sum % 2 === 0 ? '小+双' : '小+单');
+    alert(`期号: ${item.expect}\n开奖: ${nums.join('+')}=${sum}\n类型: ${tag}`);
+  }
+
+  function analyzeAndPredict() {
+    if (sequenceData.length < 5) {
+      document.getElementById('predictionResult').innerHTML = '<div style="color:#888;">数据不足，请等待更多数据...</div>';
+      return;
+    }
+
+    const last5 = sequenceData.slice(0, 5);
+    const patterns = findPatterns(last5);
+    const prediction = patterns[0].nums;
+
+    currentPrediction = {
+      expect: latestExpect ? String(parseInt(latestExpect) + 1) : null,
+      nums: prediction
+    };
+
+    displayPrediction(prediction);
+  }
+
+  function findPatterns(data) {
+    const patterns = [];
+    const sums = data.map(d => d.reduce((a, b) => a + b, 0));
+    const avgSum = sums.reduce((a, b) => a + b, 0) / sums.length;
+    const predictedSum = Math.round(avgSum);
+
+    // Pattern 1: Average sum
+    const nums1 = generateFromSum(predictedSum);
+    patterns.push({ name: '均值法', nums: nums1, sum: predictedSum });
+
+    // Pattern 2: Most frequent digits
+    const freq = Array(10).fill(0);
+    data.forEach(d => d.forEach(n => freq[n]++));
+    const top3 = freq.map((c, i) => ({ n: i, c })).sort((a, b) => b.c - a.c).slice(0, 3);
+    const nums2 = [top3[0].n, top3[1].n, top3[2].n];
+    patterns.push({ name: '频率法', nums: nums2, sum: nums2.reduce((a, b) => a + b, 0) });
+
+    // Pattern 3: Position average
+    let p1 = 0, p2 = 0, p3 = 0;
+    data.forEach(d => { p1 += d[0]; p2 += d[1]; p3 += d[2]; });
+    const nums3 = [Math.round(p1 / data.length) % 10, Math.round(p2 / data.length) % 10, Math.round(p3 / data.length) % 10];
+    patterns.push({ name: '位置均值', nums: nums3, sum: nums3.reduce((a, b) => a + b, 0) });
+
+    return patterns;
+  }
+
+  function generateFromSum(target) {
+    for (let a = 0; a < 10; a++) {
+      for (let b = 0; b < 10; b++) {
+        const c = target - a - b;
+        if (c >= 0 && c <= 9) return [a, b, c];
+      }
+    }
+    return [Math.floor(target / 3), Math.floor(target / 3), target - 2 * Math.floor(target / 3)];
+  }
+
+  function displayPrediction(prediction) {
+    const sum = prediction.reduce((a, b) => a + b, 0);
+    const tag = sum >= 14 ? (sum % 2 === 0 ? '大+双' : '大+单') : (sum % 2 === 0 ? '小+双' : '小+单');
+    const nextExpect = latestExpect ? String(parseInt(latestExpect) + 1) : '--';
+    const lastData = sequenceData[0] || [];
+    const lastSum = lastData.reduce((a, b) => a + b, 0);
+
+    let comparison = '';
+    if (predictionHistory.length > 0) {
+      const rec = predictionHistory[0];
+      comparison = `
+        <div style="margin-top:15px;padding:15px;background:rgba(0,0,0,0.3);border-radius:8px;text-align:left;">
+          <div style="color:#ffd93d;margin-bottom:8px;">📊 最近一期对比</div>
+          <div>期号: ${rec.expect}</div>
+          <div>预测: ${rec.predicted.join('+')}=${rec.predicted.reduce((a,b)=>a+b,0)}</div>
+          <div>实际: ${rec.actual.join('+')}=${rec.actual.reduce((a,b)=>a+b,0)}</div>
+          <div style="color:${rec.isCorrect ? '#6bcb77' : '#ff6b6b'};">结果: ${rec.isCorrect ? '✓ 正确' : '✗ 错误'}</div>
+        </div>
+      `;
+    }
+
+    document.getElementById('predictionResult').innerHTML = `
+      <div style="font-size:1.3rem;color:#6bcb77;">${lastData.join(' + ')} = ${lastSum}</div>
+      <div style="margin-top:8px;font-size:1rem;color:#888;">期号: ${latestExpect || '--'}</div>
+      ${comparison}
+      <div style="margin-top:20px;padding:20px;background:rgba(255,217,61,0.2);border-radius:10px;border:2px solid #ffd93d;">
+        <div style="color:#ffd93d;">🎯 期号 ${nextExpect} 预测</div>
+        <div style="font-size:1.5rem;font-weight:bold;margin-top:10px;">${prediction[0]} + ${prediction[1]} + ${prediction[2]} = ${sum}</div>
+        <div style="margin-top:5px;color:#888;font-size:0.9rem;">${tag}</div>
+      </div>
+      <div style="margin-top:15px;">
+        <button class="btn btn-primary" onclick="Pattern.confirmPrediction(${prediction[0]}, ${prediction[1]}, ${prediction[2]})">确认预测</button>
+      </div>
+    `;
+
+    document.getElementById('algorithmContent').innerHTML = `
+      <p>📊 分析方法: ${findPatterns(sequenceData.slice(0, 5))[0].name}</p>
+      <p>📈 近期和值: ${sums().join(', ')}</p>
+      <p>🎯 预测和值: ${sum}</p>
+    `;
+
+    updateHistoryDisplay();
+  }
+
+  function sums() {
+    return sequenceData.slice(0, 10).map(d => d.reduce((a, b) => a + b, 0));
+  }
+
+  function verifyAndAnalyze(actualData, prediction) {
+    const actual = actualData.nums;
+    const isCorrect = actual[0] === prediction.nums[0] && actual[1] === prediction.nums[1] && actual[2] === prediction.nums[2];
+
+    predictionHistory.unshift({
+      expect: actualData.expect,
+      predicted: prediction.nums,
+      actual: actual,
+      isCorrect: isCorrect
+    });
+    if (predictionHistory.length > 20) predictionHistory.pop();
+
+    if (!isCorrect) {
+      errorRecords.push({ actual, predicted: prediction.nums });
+      analyzeError(actual, prediction.nums);
+    }
+  }
+
+  function analyzeError(actual, predicted) {
+    const actualSum = actual.reduce((a, b) => a + b, 0);
+    const predSum = predicted.reduce((a, b) => a + b, 0);
+    const diff = actualSum - predSum;
+
+    let html = `
+      <div class="error-analysis">
+        <div class="error-analysis-title">⚠️ 预测偏差分析</div>
+        <div class="error-analysis-content">
+          <p>预测: ${predicted.join('+')}=${predSum}</p>
+          <p>实际: ${actual.join('+')}=${actualSum}</p>
+          <p>偏差: ${diff > 0 ? '+' : ''}${diff}</p>
+          <p style="margin-top:10px;">📊 近10期和值: ${sums().join(', ')}</p>
+          <p>平均和值: ${(sums().reduce((a,b)=>a+b,0)/sums().length).toFixed(1)}</p>
+        </div>
+      </div>
+    `;
+
+    const existing = document.querySelector('.error-analysis');
+    if (existing) existing.remove();
+    document.getElementById('resultPanel').insertAdjacentHTML('beforeend', html);
+  }
+
+  function updateHistoryDisplay() {
+    const container = document.getElementById('p-historyTable');
+    if (!container) return;
+
+    if (predictionHistory.length === 0) {
+      container.innerHTML = '<span style="color:#888;">暂无记录</span>';
+      return;
+    }
+
+    container.innerHTML = predictionHistory.slice(0, 10).map(rec => `
+      <div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.1);">
+        <span>${rec.expect}:</span>
+        预测${rec.predicted.join('+')}=${rec.predicted.reduce((a,b)=>a+b,0)}
+        → 实际${rec.actual.join('+')}=${rec.actual.reduce((a,b)=>a+b,0)}
+        <span style="color:${rec.isCorrect ? '#6bcb77' : '#ff6b6b'};">${rec.isCorrect ? '✓' : '✗'}</span>
+      </div>
+    `).join('');
+
+    const correct = predictionHistory.filter(r => r.isCorrect).length;
+    document.getElementById('p-accuracyStats').innerHTML = `准确率: ${correct}/${predictionHistory.length} (${(correct/predictionHistory.length*100).toFixed(1)}%)`;
+  }
+
+  function confirmPrediction(n1, n2, n3) {
+    alert(`预测已确认: ${n1}+${n2}+${n3}\n等待开奖验证...`);
+  }
+
+  function confirmActual() {
+    const n1 = parseInt(document.getElementById('p-correctNum1').value);
+    const n2 = parseInt(document.getElementById('p-correctNum2').value);
+    const n3 = parseInt(document.getElementById('p-correctNum3').value);
+    if (isNaN(n1) || isNaN(n2) || isNaN(n3)) {
+      alert('请输入有效的数字');
+      return;
+    }
+    document.getElementById('p-correctSum').textContent = n1 + n2 + n3;
+    alert(`已确认开奖结果: ${n1}+${n2}+${n3}=${n1+n2+n3}`);
+  }
+
+  function startAutoFetch() {
+    if (autoFetchInterval) clearInterval(autoFetchInterval);
+    fetchData();
+    autoFetchInterval = setInterval(fetchData, 5000);
+    updateOnlineStatus(true);
+  }
+
+  function stopAutoFetch() {
+    if (autoFetchInterval) {
+      clearInterval(autoFetchInterval);
+      autoFetchInterval = null;
+    }
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+    }
+    updateOnlineStatus(false);
+    document.getElementById('p-countdown').textContent = '';
+  }
+
+  // Auto start
+  setTimeout(startAutoFetch, 500);
+
+  return { startAutoFetch, stopAutoFetch, showDetail, confirmPrediction, confirmActual };
+})();
+</script>
+
+<!-- ========== 智能预测模块JS ========== -->
+<script>
+const Smart = (function() {
+  let autoFetchInterval = null;
+  let predictionLog = [];
+
+  function log(msg) {
+    predictionLog.unshift({ time: new Date().toLocaleTimeString(), msg });
+    if (predictionLog.length > 50) predictionLog.pop();
+    updateLogDisplay();
+  }
+
+  function updateLogDisplay() {
+    const container = document.getElementById('s-analysisLog');
+    if (!container) return;
+    container.innerHTML = predictionLog.slice(0, 20).map(l =>
+      `<div>[${l.time}] ${l.msg}</div>`
+    ).join('') || '暂无日志';
+  }
+
+  function updateHistoryDisplay() {
+    const container = document.getElementById('s-historyRecords');
+    if (!container) return;
+    if (predictionLog.filter(l => l.msg.includes('预测:')).length === 0) {
+      container.innerHTML = '<span style="color:#888;">暂无记录</span>';
+      return;
+    }
+    container.innerHTML = predictionLog.filter(l => l.msg.includes('预测:')).slice(0, 10).map(l =>
+      `<div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.1);">${l.msg}</div>`
+    ).join('');
+  }
+
+  async function fetchAndPredict() {
+    try {
+      const resp = await fetch('https://super.pc28998.com/history/JND28');
+      if (!resp.ok) throw new Error('网络错误');
+      const json = await resp.json();
+      if (json.code !== 1 || !json.data) throw new Error('数据格式错误');
+
+      const data = (json.data.data || json.data.items || json.data.list || json.data).slice(0, 20);
+
+      log(`📦 获取到 ${data.length} 条数据`);
+
+      const nums = data.map(item => {
+        const code = String(item.opencode || item.open_code || '');
+        return code.split(',').map(n => parseInt(n.trim(), 10) || 0);
+      }).filter(n => n.length >= 3);
+
+      if (nums.length < 5) {
+        log('⚠️ 数据不足');
+        return;
+      }
+
+      // 分析规律
+      const last10 = nums.slice(0, 10);
+      const sums = last10.map(n => n.reduce((a, b) => a + b, 0));
+      const avgSum = sums.reduce((a, b) => a + b, 0) / sums.length;
+      const predictedSum = Math.round(avgSum);
+
+      // 找最常见的数字组合
+      const freq = Array(10).fill(0);
+      last10.forEach(n => n.forEach(v => freq[v]++));
+      const top3 = freq.map((c, i) => ({ n: i, c })).sort((a, b) => b.c - a.c).slice(0, 3);
+
+      // 生成预测
+      let prediction = [];
+      for (let a = 0; a < 10; a++) {
+        for (let b = 0; b < 10; b++) {
+          const c = predictedSum - a - b;
+          if (c >= 0 && c <= 9) {
+            prediction = [a, b, c];
+            break;
+          }
+        }
+        if (prediction.length) break;
+      }
+
+      if (!prediction.length) {
+        prediction = [top3[0].n, top3[1].n, top3[2].n];
+      }
+
+      const tag = predictedSum >= 14 ? '大' : '小';
+      const parity = predictedSum % 2 === 0 ? '双' : '单';
+
+      log(`📊 分析: 近10期均值 ${avgSum.toFixed(1)}`);
+      log(`🎯 预测: ${prediction.join('+')}=${predictedSum} [${tag}+${parity}]`);
+      log(`📈 热门数字: ${top3.slice(0, 3).map(t => t.n+'('+t.c+'次)').join(', ')}`);
+
+      // 显示预测
+      const nextExpect = data[0] ? String(parseInt(data[0].expect) + 1) : '--';
+      document.getElementById('s-predictionContent').innerHTML = `
+        <div style="margin-bottom:15px;">期号: <strong>${nextExpect}</strong></div>
+        <div style="font-size:2rem;font-weight:bold;color:#6bcb77;">${prediction[0]} + ${prediction[1]} + ${prediction[2]} = ${predictedSum}</div>
+        <div style="margin-top:10px;color:#ffd93d;">${tag} + ${parity}</div>
+        <div style="margin-top:15px;font-size:0.9rem;color:#888;">
+          热门: ${top3.slice(0, 3).map(t => t.n).join(', ')} |
+          预测和值: ${predictedSum} |
+          均值: ${avgSum.toFixed(1)}
+        </div>
+      `;
+
+      updateHistoryDisplay();
+      document.getElementById('s-statusDot').className = 'status-dot online';
+      document.getElementById('s-status').textContent = '预测中...';
+
+    } catch (e) {
+      log(`❌ 错误: ${e.message}`);
+      document.getElementById('s-statusDot').className = 'status-dot';
+      document.getElementById('s-status').textContent = '连接失败';
+    }
+  }
+
+  function startAutoFetch() {
+    if (autoFetchInterval) clearInterval(autoFetchInterval);
+    log('🚀 启动自动预测');
+    fetchAndPredict();
+    autoFetchInterval = setInterval(fetchAndPredict, 8000);
+    document.getElementById('s-stopBtn').style.display = 'inline-block';
+    document.querySelector('.btn[onclick="Smart.startAutoFetch()"]').style.display = 'none';
+  }
+
+  function stopAutoFetch() {
+    if (autoFetchInterval) {
+      clearInterval(autoFetchInterval);
+      autoFetchInterval = null;
+    }
+    log('⏹ 已停止');
+    document.getElementById('s-stopBtn').style.display = 'none';
+    document.querySelector('.btn[onclick="Smart.startAutoFetch()"]').style.display = 'inline-block';
+    document.getElementById('s-statusDot').className = 'status-dot';
+    document.getElementById('s-status').textContent = '已停止';
+  }
+
+  return { startAutoFetch, stopAutoFetch };
+})();
+</script>
+
+<!-- ========== 开奖模块JS ========== -->
+<script>
+const Kaijiang = (function() {
+  const API_URL = 'https://super.pc28998.com/history/JND28';
+  let data = [], timer = null, isFetching = false;
+  let analysisLog = [];
+  let predictionHistory = [];
+  let currentPrediction = null;
+  let algorithmState = { weights: { trend: 0.3, avg: 0.2, repeat: 0.2, missing: 0.15, parity: 0.15 }, errorCount: 0, correctCount: 0 };
+
+  async function fetchData() {
+    if (isFetching) return;
+    isFetching = true;
+    try {
+      const resp = await fetch(API_URL);
+      if (!resp.ok) throw new Error('网络错误');
+      const json = await resp.json();
+      if (json.code !== 1 || !json.data) throw new Error('数据格式错误');
+
+      const newData = extractArray(json.data).slice(0, 100).map(item => ({
+        ...item,
+        nums: parseNums(item.opencode),
+        sum: 0
+      })).filter(item => item.nums.length >= 3);
+
+      newData.forEach(item => item.sum = item.nums.reduce((a, b) => a + b, 0));
+
+      if (data.length > 0 && newData[0].expect !== data[0].expect) {
+        log('🎉 新期开奖: ' + newData[0].expect);
+        verifyAndLearn(newData[0]);
+      }
+
+      data = newData;
+      renderCurrent();
+      renderPeriods();
+      analyzeAndPredict();
+      setupCountdown();
+      isFetching = false;
+    } catch (e) {
+      log('❌ 获取数据失败: ' + e.message, 'error');
+      isFetching = false;
+    }
+  }
+
+  function extractArray(res) {
+    if (Array.isArray(res)) return res;
+    if (res && typeof res === 'object') {
+      for (const k of ['data', 'items', 'list', 'results', 'records']) {
+        if (Array.isArray(res[k])) return res[k];
+      }
+      for (const k in res) if (Array.isArray(res[k])) return res[k];
+    }
+    return [];
+  }
+
+  function parseNums(opencode) {
+    if (!opencode) return [];
+    return String(opencode).split(',').map(s => parseInt(s.trim(), 10) || 0);
+  }
+
+  function log(msg, type) {
+    analysisLog.unshift({ time: new Date().toLocaleTimeString(), msg, type });
+    if (analysisLog.length > 100) analysisLog.pop();
+    updateAnalysisDisplay();
+  }
+
+  function updateAnalysisDisplay() {
+    const el = document.getElementById('k-analysis-content');
+    if (!el) return;
+    el.innerHTML = analysisLog.slice(0, 30).map(l =>
+      `<div class="analysis-step ${l.type || ''}">[${l.time}] ${l.msg}</div>`
+    ).join('') || '<div style="color:#6b7280;">暂无分析</div>';
+  }
+
+  function renderCurrent() {
+    if (!data[0]) return;
+    const latest = data[0];
+    const nums = latest.nums;
+    const s = latest.sum;
+    const tag = s >= 14 ? (s % 2 === 0 ? '大+双' : '大+单') : (s % 2 === 0 ? '小+双' : '小+单');
+
+    document.getElementById('k-cur-period').textContent = latest.expect;
+    document.getElementById('k-cur-nums').textContent = nums.join('+');
+    document.getElementById('k-cur-sum').textContent = s;
+    document.getElementById('k-cur-tag').textContent = tag;
+    document.getElementById('k-cur-time').textContent = fmtTime(latest.opentime);
+  }
+
+  function fmtTime(s) {
+    if (!s) return '--';
+    try {
+      if (typeof s === 'string' && s.includes('-')) {
+        const [md, hms] = s.split(' ');
+        const [M, D] = md.split('-').map(Number);
+        const [hh, mm, ss] = hms.split(':').map(Number);
+        const pad = n => String(n).padStart(2, '0');
+        return `${pad(M)}-${pad(D)} ${pad(hh)}:${pad(mm)}:${pad(ss)}`;
+      }
+      const n = Number(s);
+      if (!isNaN(n)) {
+        const d = new Date(n > 1e12 ? n : n * 1000);
+        const pad = x => String(x).padStart(2, '0');
+        return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+      }
+    } catch (e) {}
+    return '--';
+  }
+
+  function renderPeriods() {
+    const container = document.getElementById('k-periods-list');
+    if (!container || !data.length) return;
+    container.innerHTML = data.slice(0, 30).map((item, i) =>
+      `<div class="period-item${i === 0 ? ' latest' : ''}" onclick="Kaijiang.showDetail(${i})">${item.expect}</div>`
+    ).join('');
+  }
+
+  function showDetail(index) {
+    if (!data[index]) return;
+    const item = data[index];
+    const s = item.sum;
+    const tag = s >= 14 ? (s % 2 === 0 ? '大+双' : '大+单') : (s % 2 === 0 ? '小+双' : '小+单');
+    document.getElementById('k-modal-period').textContent = item.expect + '期';
+    document.getElementById('k-modal-nums').textContent = item.nums.join('+') + '=' + s;
+    document.getElementById('k-modal-tag').textContent = tag;
+    document.getElementById('k-modal').classList.add('show');
+  }
+
+  function closeModal() {
+    document.getElementById('k-modal').classList.remove('show');
+  }
+
+  function setupCountdown() {
+    if (timer) clearInterval(timer);
+    const latest = data[0];
+    if (!latest) return;
+    let t = null;
+    try {
+      const ts = latest.opentime;
+      if (typeof ts === 'string' && ts.includes('-')) {
+        const [md, hms] = ts.split(' ');
+        const [M, D] = md.split('-').map(Number);
+        const [hh, mm, ss] = hms.split(':').map(Number);
+        t = new Date(new Date().getFullYear(), M - 1, D, hh, mm, ss);
+      } else {
+        const n = Number(ts);
+        t = new Date(n > 1e12 ? n : n * 1000);
+      }
+    } catch (e) {}
+    if (!t) { document.getElementById('k-cd').style.display = 'none'; return; }
+
+    const nextTime = new Date(t.getTime() + 3 * 60 * 1000 + 30 * 1000);
+    document.getElementById('k-cd').style.display = 'block';
+
+    const tick = () => {
+      const now = new Date();
+      const diff = nextTime - now;
+      const el = document.getElementById('k-cd');
+      const txt = document.getElementById('k-cd-txt');
+      if (diff <= 0) {
+        clearInterval(timer);
+        txt.textContent = '正在开奖...';
+        el.classList.add('highlight');
+        if (!isFetching) setTimeout(fetchData, 2000);
+        return;
+      }
+      const m = Math.floor(diff / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      txt.textContent = `${m}分${String(s).padStart(2, '0')}秒`;
+      el.classList.toggle('highlight', diff < 30000);
+    };
+    tick();
+    timer = setInterval(tick, 1000);
+  }
+
+  function analyzeAndPredict() {
+    log('='.repeat(30), '');
+    log('🔍 开始分析...', '');
+    if (data.length < 10) { log('⚠️ 数据不足', 'error'); return; }
+
+    const predictions = [];
+    predictions.push(analyzeTrend());
+    predictions.push(analyzePositionAvg());
+    predictions.push(analyzeFrequency());
+    predictions.push(analyzeMissing());
+    predictions.push(analyzeRelations());
+
+    const finalPrediction = weightedPrediction(predictions);
+    log('📊 预测: ' + finalPrediction.nums.join('+') + '=' + finalPrediction.sum, '');
+
+    currentPrediction = {
+      period: String(parseInt(data[0].expect) + 1),
+      predictedNums: finalPrediction.nums,
+      predictedSum: finalPrediction.sum,
+      predictedTag: finalPrediction.tag,
+      verified: false
+    };
+
+    renderPrediction();
+    renderHistory();
+  }
+
+  function analyzeTrend() {
+    const recent = data.slice(0, 15);
+    const sums = recent.map(d => d.sum);
+    let trend = 0;
+    for (let i = 0; i < sums.length - 1; i++) trend += sums[i + 1] - sums[i];
+    trend = trend / (sums.length - 1);
+    const avg = sums.reduce((a, b) => a + b, 0) / sums.length;
+    const lastSum = sums[0];
+    let predictedSum = Math.round(lastSum + trend * 0.7);
+    predictedSum = Math.max(3, Math.min(24, predictedSum));
+    const nums = generateFromSum(predictedSum);
+    log(`📈 趋势: 均值${avg.toFixed(1)}, 趋势${trend.toFixed(2)}, 上期${lastSum}`, 'think');
+    return { name: '趋势', nums, sum: predictedSum, tag: getTag(predictedSum), weight: 0.25 };
+  }
+
+  function analyzePositionAvg() {
+    const recent = data.slice(0, 20);
+    let p1 = 0, p2 = 0, p3 = 0;
+    recent.forEach(item => { if (item.nums.length >= 3) { p1 += item.nums[0]; p2 += item.nums[1]; p3 += item.nums[2]; } });
+    const nums = [Math.round(p1 / recent.length) % 10, Math.round(p2 / recent.length) % 10, Math.round(p3 / recent.length) % 10];
+    const sum = nums[0] + nums[1] + nums[2];
+    log(`📊 位置均值: ${nums.join(',')}`, 'think');
+    return { name: '均值', nums, sum, tag: getTag(sum), weight: 0.2 };
+  }
+
+  function analyzeFrequency() {
+    const recent = data.slice(0, 10);
+    const freq = Array(10).fill(0);
+    recent.forEach(item => item.nums.forEach(n => freq[n]++));
+    const sorted = freq.map((c, i) => ({ n: i, c })).sort((a, b) => b.c - a.c);
+    let nums = [sorted[0].n, sorted[1].n, sorted[2].n];
+    let sum = nums[0] + nums[1] + nums[2];
+    while ((sum < 3 || sum > 24) && sorted.length > 6) {
+      nums = [sorted[3].n, sorted[4].n, sorted[5].n];
+      sum = nums[0] + nums[1] + nums[2];
+    }
+    log(`🔥 频率: ${sorted[0].n}(${sorted[0].c}次)`, 'think');
+    return { name: '频率', nums, sum, tag: getTag(sum), weight: 0.2 };
+  }
+
+  function analyzeMissing() {
+    const recent = data.slice(0, 15);
+    const lastSeen = Array(10).fill(999);
+    recent.forEach((item, idx) => item.nums.forEach(n => { if (lastSeen[n] === 999) lastSeen[n] = idx; }));
+    const missing = lastSeen.map((m, i) => ({ n: i, m })).sort((a, b) => b.m - a.m);
+    const nums = [missing[0].n, missing[1].n, missing[2].n];
+    const sum = nums[0] + nums[1] + nums[2];
+    log(`❄️ 遗漏: ${missing[0].n}(漏${missing[0].m}期)`, 'think');
+    return { name: '遗漏', nums, sum, tag: getTag(sum), weight: 0.15 };
+  }
+
+  function analyzeRelations() {
+    const recent = data.slice(0, 5);
+    let relations = [];
+    recent.forEach(item => {
+      if (item.nums.length >= 3) relations.push({ diff12: item.nums[1] - item.nums[0], diff23: item.nums[2] - item.nums[1] });
+    });
+    const avgDiff12 = relations.reduce((a, r) => a + r.diff12, 0) / relations.length;
+    const avgDiff23 = relations.reduce((a, r) => a + r.diff23, 0) / relations.length;
+    const lastNums = data[0].nums;
+    const nums = [lastNums[0], Math.round(lastNums[1] + avgDiff12 * 0.5) % 10, Math.round(lastNums[2] + avgDiff23 * 0.5) % 10];
+    const sum = nums[0] + nums[1] + nums[2];
+    log(`🔗 关系: ${avgDiff12.toFixed(1)}, ${avgDiff23.toFixed(1)}`, 'think');
+    return { name: '关系', nums: nums.map(n => Math.abs(n % 10)), sum, tag: getTag(sum), weight: 0.2 };
+  }
+
+  function generateFromSum(target) {
+    for (let a = 0; a < 10; a++) {
+      for (let b = 0; b < 10; b++) {
+        const c = target - a - b;
+        if (c >= 0 && c <= 9) return [a, b, c];
+      }
+    }
+    return [Math.floor(target / 3), Math.floor(target / 3), target - 2 * Math.floor(target / 3)];
+  }
+
+  function getTag(sum) {
+    return sum >= 14 ? (sum % 2 === 0 ? '大+双' : '大+单') : (sum % 2 === 0 ? '小+双' : '小+单');
+  }
+
+  function weightedPrediction(predictions) {
+    let totalWeight = 0, weightedSum = 0;
+    predictions.forEach(p => { weightedSum += p.sum * p.weight; totalWeight += p.weight; });
+    const avgSum = Math.round(weightedSum / totalWeight);
+    const nums = generateFromSum(avgSum);
+    const sum = nums[0] + nums[1] + nums[2];
+    return { nums, sum, tag: getTag(sum) };
+  }
+
+  function verifyAndLearn(latest) {
+    if (!currentPrediction || currentPrediction.verified) return;
+    const actual = latest.nums;
+    const actualSum = actual.reduce((a, b) => a + b, 0);
+    const actualTag = getTag(actualSum);
+    const isCorrect = currentPrediction.predictedTag === actualTag;
+    currentPrediction.verified = true;
+    currentPrediction.actualNums = actual;
+    currentPrediction.actualSum = actualSum;
+    currentPrediction.actualTag = actualTag;
+    currentPrediction.correct = isCorrect;
+    predictionHistory.unshift(currentPrediction);
+    if (predictionHistory.length > 50) predictionHistory.pop();
+    log('='.repeat(30), '');
+    log(`📋 验证: 预测${currentPrediction.predictedTag}, 实际${actualTag}`, isCorrect ? 'success' : 'error');
+    if (!isCorrect) {
+      algorithmState.errorCount++;
+      log(`❌ 预测错误，分析原因...`, 'error');
+      analyzeError(actual, currentPrediction);
+    } else {
+      algorithmState.correctCount++;
+    }
+    log(`📊 准确率: ${algorithmState.correctCount}/${algorithmState.correctCount + algorithmState.errorCount}`, '');
+  }
+
+  function analyzeError(actual, prediction) {
+    const actualSum = actual.reduce((a, b) => a + b, 0);
+    const predSum = prediction.predictedSum;
+    log(`   和值偏差: ${actualSum - predSum > 0 ? '+' : ''}${actualSum - predSum}`, '');
+    for (let i = 0; i < 3; i++) {
+      if (actual[i] === prediction.predictedNums[i]) {
+        log(`   第${i + 1}位命中: ${actual[i]}`, 'success');
+      } else {
+        log(`   第${i + 1}位偏差: 预测${prediction.predictedNums[i]}, 实际${actual[i]}`, '');
+      }
+    }
+  }
+
+  function renderPrediction() {
+    if (!currentPrediction) return;
+    const p = currentPrediction;
+    document.getElementById('k-pred-nums').textContent = `${p.predictedNums[0]} + ${p.predictedNums[1]} + ${p.predictedNums[2]} = ${p.predictedSum}`;
+    document.getElementById('k-pred-analysis').textContent = `下一期: ${p.period}期 | ${p.predictedTag}`;
+  }
+
+  function renderHistory() {
+    const tbody = document.getElementById('k-history-tbody');
+    if (!tbody) return;
+    if (predictionHistory.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="color:#6b7280">暂无记录</td></tr>';
+      return;
+    }
+    tbody.innerHTML = predictionHistory.slice(0, 15).map(h => `
+      <tr>
+        <td>${h.period}</td>
+        <td>${h.predictedNums.join('+')}=${h.predictedSum}</td>
+        <td>${h.actualNums ? h.actualNums.join('+') + '=' + h.actualSum : '--'}</td>
+        <td class="${h.correct ? 'correct' : 'wrong'}">${h.correct ? '✓' : '✗'}</td>
+      </tr>
+    `).join('');
+  }
+
+  // Modal close on outside click
+  document.getElementById('k-modal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // Auto start
+  setTimeout(fetchData, 1000);
+
+  return { showDetail, closeModal };
+})();
+</script>
+
+</body>
+</html>
