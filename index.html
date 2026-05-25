@@ -1,0 +1,1977 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数字规律分析</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 30px 20px;
+            color: white;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            background: linear-gradient(90deg, #ff6b6b, #ffd93d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .sequence-display {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        .sequence-title {
+            font-size: 1.3rem;
+            color: #ffd93d;
+            margin-bottom: 15px;
+        }
+
+        .sequence-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .sequence-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .sequence-item.current {
+            background: rgba(107, 203, 119, 0.4);
+            border: 2px solid #6bcb77;
+        }
+
+        .sequence-item.predicted {
+            background: rgba(255, 107, 107, 0.3);
+            border: 2px solid #ff6b6b;
+        }
+
+        .arrow-icon {
+            color: #ffd93d;
+            font-size: 1.2rem;
+            margin: 0 5px;
+        }
+
+        .result-panel {
+            background: rgba(107, 203, 119, 0.2);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 2px solid rgba(107, 203, 119, 0.3);
+        }
+
+        .result-title {
+            font-size: 1.3rem;
+            color: #6bcb77;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-equation {
+            font-family: 'Courier New', monospace;
+            font-size: 1.5rem;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+
+        .result-match {
+            color: #6bcb77;
+            font-size: 1.2rem;
+            margin-top: 15px;
+        }
+
+        .result-mismatch {
+            color: #ff6b6b;
+            font-size: 1.2rem;
+            margin-top: 15px;
+        }
+
+        .prediction-result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .prediction-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 8px;
+            font-size: 1.2rem;
+        }
+
+        .prediction-row .label {
+            color: #ffd93d;
+            font-weight: bold;
+        }
+
+        .prediction-row .value {
+            font-family: 'Courier New', monospace;
+        }
+
+        .prediction-row .status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .prediction-row .status.correct {
+            background: rgba(107, 203, 119, 0.3);
+            color: #6bcb77;
+            border: 2px solid #6bcb77;
+        }
+
+        .prediction-row .status.wrong {
+            background: rgba(255, 107, 107, 0.3);
+            color: #ff6b6b;
+            border: 2px solid #ff6b6b;
+        }
+
+        .prediction-row .status.pending {
+            background: rgba(255, 255, 255, 0.1);
+            color: #888;
+            border: 2px solid #888;
+        }
+
+        .input-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        .input-title {
+            font-size: 1.3rem;
+            color: #ffd93d;
+            margin-bottom: 15px;
+        }
+
+        .input-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .number-input {
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: white;
+            outline: none;
+        }
+
+        .number-input:focus {
+            border-color: #ffd93d;
+            box-shadow: 0 0 15px rgba(255, 217, 61, 0.3);
+        }
+
+        .operator {
+            font-size: 2rem;
+            color: #ff6b6b;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #ff6b6b, #ffd93d);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(90deg, #48a3da, #6bcb77);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+        }
+
+        .algorithm-analysis {
+            background: rgba(72, 163, 218, 0.2);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 25px;
+            border: 1px solid rgba(72, 163, 218, 0.3);
+        }
+
+        .algorithm-title {
+            font-size: 1.2rem;
+            color: #48a3da;
+            margin-bottom: 15px;
+        }
+
+        .algorithm-content {
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            color: #ccc;
+            line-height: 1.8;
+        }
+
+        .success-box {
+            background: rgba(107, 203, 119, 0.3);
+            border: 2px solid #6bcb77;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+
+        .error-box {
+            background: rgba(255, 107, 107, 0.3);
+            border: 2px solid #ff6b6b;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+
+        .info-text {
+            color: #ccc;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        .history-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .history-title {
+            font-size: 1.2rem;
+            color: #ffd93d;
+            margin-bottom: 15px;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .history-table th,
+        .history-table td {
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .history-table th {
+            background: rgba(0, 0, 0, 0.3);
+            color: #ffd93d;
+        }
+
+        .history-correct {
+            background: rgba(107, 203, 119, 0.3);
+            color: #6bcb77;
+        }
+
+        .history-wrong {
+            background: rgba(255, 107, 107, 0.3);
+            color: #ff6b6b;
+        }
+
+        .auto-fetch-panel {
+            background: rgba(72, 163, 218, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(72, 163, 218, 0.3);
+        }
+
+        .fetch-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .countdown {
+            font-size: 1.5rem;
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .opentime-display {
+            font-size: 1rem;
+            color: #6bcb77;
+            margin-left: 15px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .status-online {
+            background: #6bcb77;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-offline {
+            background: #ff6b6b;
+        }
+
+        .auto-badge {
+            display: inline-block;
+            background: #6bcb77;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .error-analysis {
+            background: rgba(255, 217, 61, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            border-left: 3px solid #ffd93d;
+        }
+
+        .error-analysis-title {
+            color: #ffd93d;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .error-analysis-content {
+            color: #ccc;
+            line-height: 1.6;
+        }
+
+        .error-fill-animation {
+            animation: errorFillPulse 0.5s ease-in-out;
+        }
+
+        @keyframes errorFillPulse {
+            0% { background: rgba(255, 107, 107, 0.1); transform: scale(1); }
+            50% { background: rgba(255, 107, 107, 0.4); transform: scale(1.02); }
+            100% { background: rgba(255, 107, 107, 0.1); transform: scale(1); }
+        }
+
+        .thinking-analysis {
+            background: rgba(72, 163, 218, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            border-left: 3px solid #48a3da;
+        }
+
+        .thinking-title {
+            color: #48a3da;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .thinking-content {
+            color: #eee;
+            line-height: 1.8;
+        }
+
+        .thinking-content .question {
+            color: #ffd93d;
+            font-weight: bold;
+        }
+
+        .thinking-content .answer {
+            color: #6bcb77;
+        }
+
+        .new-prediction-animation {
+            animation: newPredictionSlide 0.6s ease-out;
+        }
+
+        @keyframes newPredictionSlide {
+            0% { opacity: 0; transform: translateY(-20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .countdown-urgent {
+            animation: countdownPulse 1s infinite;
+        }
+
+        @keyframes countdownPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        /* 刮刮卡样式 */
+        .scratch-card-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 20px auto;
+        }
+
+        .scratch-card-result {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            border-radius: 15px;
+            z-index: 1;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .scratch-card-canvas-wrapper {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 150px;
+        }
+
+        .scratch-card-canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 15px;
+            cursor: crosshair;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .scratch-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 1.2rem;
+            pointer-events: none;
+            z-index: 3;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .scratch-hint-hidden {
+            display: none;
+        }
+
+        .scratch-reveal-btn {
+            margin-top: 15px;
+            padding: 10px 30px;
+            background: linear-gradient(90deg, #ff6b6b, #ffd93d);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .scratch-reveal-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔢 数字规律分析</h1>
+
+        <div class="auto-fetch-panel">
+            <div class="history-title">📡 自动获取数据</div>
+            <div class="fetch-controls">
+                <span class="status-indicator status-offline" id="statusIndicator"></span>
+                <span id="statusText">正在连接...</span>
+                <span id="opentimeDisplay" class="opentime-display"></span>
+                <span class="auto-badge" id="autoBadge" style="display:none;">自动获取中</span>
+                <button class="btn btn-secondary" id="btnStart" onclick="startAutoFetch()">🔄 启动自动获取</button>
+                <button class="btn btn-secondary" id="btnStop" onclick="stopAutoFetch()" style="display:none;">⏹ 停止自动获取</button>
+                <span id="countdown" class="countdown"></span>
+            </div>
+        </div>
+
+        <div class="result-panel" id="latestResultPanel" style="background: rgba(107, 203, 119, 0.25); border: 2px solid rgba(107, 203, 119, 0.5);">
+            <div class="result-title" style="font-size: 1.4rem;">🎯 最新开奖结果</div>
+            <div id="latestResultContent" style="text-align: center; padding: 20px 0;">
+                <div id="latestExpectText" style="font-size: 1.1rem; color: #888; margin-bottom: 10px;">期号: --</div>
+                
+                <!-- 刮刮卡区域 -->
+                <div class="scratch-card-container" id="scratchCardContainer" style="display: none;">
+                    <div class="scratch-card-result" id="scratchCardResult">
+                        <div id="scratchDrawText" style="font-size: 2.2rem; font-weight: bold; color: #6bcb77;">-- + -- + -- = --</div>
+                        <div id="scratchTagText" style="margin-top: 10px; font-size: 1.2rem; color: #ffd93d;">-- + --</div>
+                    </div>
+                    <div class="scratch-card-canvas-wrapper">
+                        <canvas id="scratchCardCanvas" class="scratch-card-canvas"></canvas>
+                        <div class="scratch-hint" id="scratchHint">👆 刮开查看结果</div>
+                    </div>
+                </div>
+                
+                <!-- 普通显示区域 -->
+                <div id="normalResultDisplay">
+                    <div id="latestDrawText" style="font-size: 2.2rem; font-weight: bold; color: #6bcb77;">-- + -- + -- = --</div>
+                    <div id="latestTagText" style="margin-top: 10px; font-size: 1.2rem; color: #ffd93d;">-- + --</div>
+                </div>
+                
+                <!-- 一键揭示按钮 -->
+                <div id="revealBtnContainer" style="display: none; margin-top: 15px;">
+                    <button class="scratch-reveal-btn" onclick="revealAllScratch()">✨ 一键揭示</button>
+                </div>
+                
+                <div id="latestTimeText" style="margin-top: 15px; font-size: 1rem; color: #aaa;">开奖时间: --</div>
+            </div>
+        </div>
+
+        <div class="history-panel" id="historyPanel">
+            <div class="history-title">📋 预测历史记录</div>
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>期号</th>
+                        <th>开奖结果</th>
+                        <th>预测结果</th>
+                        <th>和值</th>
+                        <th>状态</th>
+                        <th>开奖时间</th>
+                        <th>记录时间</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: #888;">暂无历史记录</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="sequence-display">
+            <div class="sequence-title">📊 你提供的数据序列</div>
+            <div class="sequence-list">
+                <span class="sequence-item">4+0+8=12</span>
+                <span class="arrow-icon">→</span>
+                <span class="sequence-item">3+1+7=11</span>
+                <span class="arrow-icon">→</span>
+                <span class="sequence-item">4+1+5=10</span>
+                <span class="arrow-icon">→</span>
+                <span class="sequence-item">3+7+5=15</span>
+                <span class="arrow-icon">→</span>
+                <span class="sequence-item">5+8+5=18</span>
+                <span class="arrow-icon">→</span>
+                <span class="sequence-item">0+4+7=11</span>
+                <span class="arrow-icon">→</span>
+                <span class="sequence-item">8+3+5=16</span>
+                <span class="arrow-icon">→</span>
+                <span class="sequence-item">4+2+6=12</span>
+                <span class="arrow-icon">→</span>
+                <span class="sequence-item">7+4+9=20</span>
+                <span class="arrow-icon">→</span>
+                <span class="sequence-item">3+0+6=9</span>
+                <span class="arrow-icon">→</span>
+                <span class="sequence-item current">6+0+2=8</span>
+            </div>
+        </div>
+
+        <div class="result-panel" id="resultPanel">
+            <div class="result-title">🎯 算法预测结果</div>
+            <div id="predictionResult"></div>
+        </div>
+
+        <div class="input-section">
+            <div class="input-title">  如果预测错误，请输入实际结果</div>
+            
+            <div class="input-group">
+                <input type="number" class="number-input" id="correctNum1" min="0" max="9" placeholder="?">
+                <span class="operator">+</span>
+                <input type="number" class="number-input" id="correctNum2" min="0" max="9" placeholder="?">
+                <span class="operator">+</span>
+                <input type="number" class="number-input" id="correctNum3" min="0" max="9" placeholder="?">
+                <span class="operator">=</span>
+                <span class="operator" id="correctSum">?</span>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="updateSequence()">
+                    ✏️ 更新序列并重新分析
+                </button>
+                <button class="btn btn-secondary" onclick="analyzeAndPredict()">
+                    🔍 重新分析规律
+                </button>
+            </div>
+
+            <div class="info-text">
+                输入三个数字后点击"更新序列并重新分析"，系统会根据新数据重新找出规律
+            </div>
+        </div>
+
+        <div class="algorithm-analysis" id="algorithmAnalysis">
+            <div class="algorithm-title">🔬 当前识别的规律</div>
+            <div class="algorithm-content" id="algorithmContent">
+                系统正在分析中...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ================= 全局状态 =================
+        const sequenceData = [
+            [4, 0, 8],
+            [3, 1, 7],
+            [4, 1, 5],
+            [3, 7, 5],
+            [5, 8, 5],
+            [0, 4, 7],
+            [8, 3, 5],
+            [4, 2, 6],
+            [7, 4, 9],
+            [3, 0, 6],
+            [6, 0, 2]
+        ];
+
+        let discoveredPattern = null;
+        let autoFetchInterval = null;
+        let isRequesting = false;
+        let latestExpect = null;
+        let lastFetchedExpect = null;
+        let history = [];
+        let predictionHistory = [];
+        let errorRecords = [];
+        let algorithmAccuracy = {};
+        let currentPrediction = null;
+        let lastVerifiedExpect = null;
+        let countdownInterval = null;
+        let lastOpentime = null;
+
+        // 刮刮卡相关变量
+        let scratchCanvas = null;
+        let scratchCtx = null;
+        let isScratching = false;
+        let scratchRevealed = false;
+        let lastScratchExpect = null;
+
+        // ================= localStorage 持久化 =================
+        const STORAGE_KEY_PREDICTION_HISTORY = 'lottery_prediction_history';
+        const STORAGE_KEY_CURRENT_PREDICTION = 'lottery_current_prediction';
+        const STORAGE_KEY_LAST_VERIFIED_EXPECT = 'lottery_last_verified_expect';
+        const STORAGE_KEY_LAST_FETCHED_EXPECT = 'lottery_last_fetched_expect';
+
+        function saveToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY_PREDICTION_HISTORY, JSON.stringify(predictionHistory));
+                if (currentPrediction) {
+                    localStorage.setItem(STORAGE_KEY_CURRENT_PREDICTION, JSON.stringify(currentPrediction));
+                }
+                if (lastVerifiedExpect) {
+                    localStorage.setItem(STORAGE_KEY_LAST_VERIFIED_EXPECT, lastVerifiedExpect);
+                }
+                if (lastFetchedExpect) {
+                    localStorage.setItem(STORAGE_KEY_LAST_FETCHED_EXPECT, lastFetchedExpect);
+                }
+            } catch (e) {
+                console.error('保存到 localStorage 失败:', e);
+            }
+        }
+
+        function loadFromStorage() {
+            try {
+                const savedHistory = localStorage.getItem(STORAGE_KEY_PREDICTION_HISTORY);
+                if (savedHistory) {
+                    predictionHistory = JSON.parse(savedHistory);
+                }
+                const savedPrediction = localStorage.getItem(STORAGE_KEY_CURRENT_PREDICTION);
+                if (savedPrediction) {
+                    currentPrediction = JSON.parse(savedPrediction);
+                }
+                const savedLastVerified = localStorage.getItem(STORAGE_KEY_LAST_VERIFIED_EXPECT);
+                if (savedLastVerified) {
+                    lastVerifiedExpect = savedLastVerified;
+                }
+                const savedLastFetched = localStorage.getItem(STORAGE_KEY_LAST_FETCHED_EXPECT);
+                if (savedLastFetched) {
+                    lastFetchedExpect = savedLastFetched;
+                }
+            } catch (e) {
+                console.error('从 localStorage 加载失败:', e);
+            }
+        }
+
+        // ================= 显示最新开奖结果 =================
+        function displayLatestDraw(data) {
+            if (!data) return;
+            
+            const nums = data.nums;
+            const sum = nums.reduce((a, b) => a + b, 0);
+            const tag = sum >= 14 ? (sum % 2 === 0 ? '大+双' : '大+单') : (sum % 2 === 0 ? '小+双' : '小+单');
+            
+            const elExpect = document.getElementById('latestExpectText');
+            const elDraw = document.getElementById('latestDrawText');
+            const elTag = document.getElementById('latestTagText');
+            const elTime = document.getElementById('latestTimeText');
+            const scratchContainer = document.getElementById('scratchCardContainer');
+            const normalDisplay = document.getElementById('normalResultDisplay');
+            const scratchDrawText = document.getElementById('scratchDrawText');
+            const scratchTagText = document.getElementById('scratchTagText');
+            const revealBtnContainer = document.getElementById('revealBtnContainer');
+            
+            // 基本信息更新 - 这些总是要显示
+            if (elExpect) elExpect.textContent = '期号: ' + (data.expect || '--');
+            if (elTime && data.opentime) {
+                const d = new Date(data.opentime);
+                const pad = n => String(n).padStart(2, '0');
+                elTime.textContent = `开奖时间: ${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+            }
+            
+            // 始终更新普通显示区域的内容，确保切换时能正确显示
+            if (elDraw) elDraw.textContent = `${nums[0]} + ${nums[1]} + ${nums[2]} = ${sum}`;
+            if (elTag) elTag.textContent = tag;
+            
+            // 判断是否是新开奖的一期
+            const isNewDraw = data.expect !== lastScratchExpect;
+            
+            if (isNewDraw && data.expect) {
+                // 新开奖，使用刮刮卡
+                lastScratchExpect = data.expect;
+                scratchRevealed = false;
+                
+                if (scratchContainer) scratchContainer.style.display = 'block';
+                if (normalDisplay) normalDisplay.style.display = 'none';
+                if (revealBtnContainer) revealBtnContainer.style.display = 'block';
+                
+                // 更新刮刮卡结果
+                if (scratchDrawText) scratchDrawText.textContent = `${nums[0]} + ${nums[1]} + ${nums[2]} = ${sum}`;
+                if (scratchTagText) scratchTagText.textContent = tag;
+                
+                // 初始化刮刮卡
+                initScratchCard();
+            } else if (scratchRevealed || !isNewDraw) {
+                // 已经刮开或者是旧数据，普通显示
+                if (scratchContainer) scratchContainer.style.display = 'none';
+                if (normalDisplay) normalDisplay.style.display = 'block';
+                if (revealBtnContainer) revealBtnContainer.style.display = 'none';
+            }
+        }
+
+        // ================= 多API竞速请求 =================
+        async function fetchDataFastest() {
+            if (isRequesting) return;
+            isRequesting = true;
+
+            const apiList = [
+                {
+                    url: 'https://pc28.help/api/kj.json?nbr=50',
+                    parser: (json) => {
+                        if (!json.data || !json.data.length) return [];
+                        const countdownStr = json.countdown || '';
+                        return json.data.map(item => {
+                            const nums = item.number.split('+').map(Number);
+                            const opentimeStr = (item.date||'') + ' ' + (item.time||'');
+                            const opentime = new Date(opentimeStr).getTime();
+                            return {
+                                expect: String(item.nbr),
+                                nums: nums,
+                                sum: nums.reduce((a,b)=>a+b,0),
+                                type: item.combination || getTypeFromSum(nums.reduce((a,b)=>a+b,0)),
+                                opentime: isNaN(opentime) ? Date.now() : opentime,
+                                countdown: countdownStr
+                            };
+                        });
+                    }
+                },
+                {
+                    url: 'https://super.pc28998.com/history/JND28',
+                    parser: (json) => {
+                        if (json.code !== 1 || !json.data) return [];
+                        return json.data.map(item => ({
+                            expect: String(item.expect),
+                            nums: item.opencode.split(',').map(Number),
+                            sum: item.opencode.split(',').map(Number).reduce((a,b)=>a+b,0),
+                            type: getTypeFromSum(item.opencode.split(',').map(Number).reduce((a,b)=>a+b,0)),
+                            opentime: item.opentime
+                        }));
+                    }
+                },
+                {
+                    url: 'https://api.kj28.top/api',
+                    parser: (json) => {
+                        if (!json.data || !json.data.length) return [];
+                        return json.data.map(item => {
+                            const nums = item.opennum.split('+').map(Number);
+                            const sum = parseInt(item.sum,10);
+                            return {
+                                expect: String(item.qihao),
+                                nums: nums,
+                                sum: sum,
+                                type: getTypeFromSum(sum),
+                                opentime: item.opentime || item.opentimestamp
+                            };
+                        });
+                    }
+                }
+            ];
+
+            const requests = apiList.map(async (api) => {
+                try {
+                    const resp = await fetch(api.url, { signal: AbortSignal.timeout(3000) });
+                    if (!resp.ok) throw new Error('bad');
+                    const json = await resp.json();
+                    const parsed = api.parser(json);
+                    if (parsed && parsed.length > 0) return parsed;
+                } catch(e) {}
+                return null;
+            });
+
+            const results = await Promise.all(requests);
+            let winningData = null;
+            for (const data of results) {
+                if (data && data.length > 0) {
+                    winningData = data;
+                    break;
+                }
+            }
+
+            if (!winningData) {
+                try {
+                    const proxyResp = await fetch('https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent('https://super.pc28998.com/history/JND28'), { signal: AbortSignal.timeout(5000) });
+                    if (proxyResp.ok) {
+                        const json = await proxyResp.json();
+                        if (json.code === 1 && json.data) {
+                            winningData = json.data.map(item => ({
+                                expect: String(item.expect),
+                                nums: item.opencode.split(',').map(Number),
+                                sum: item.opencode.split(',').map(Number).reduce((a,b)=>a+b,0),
+                                type: getTypeFromSum(item.opencode.split(',').map(Number).reduce((a,b)=>a+b,0)),
+                                opentime: item.opentime
+                            }));
+                        }
+                    }
+                } catch(e) {}
+            }
+
+            if (winningData && winningData.length > 0) {
+                history = winningData.map(item => ({
+                    expect: item.expect,
+                    nums: item.nums,
+                    sum: item.sum,
+                    type: item.type || getTypeFromSum(item.sum),
+                    opentime: robustParseOpentime(item.opentime)
+                })).filter(item => item.sum >= 0 && item.sum <= 27)
+                  .sort((a, b) => parseInt(b.expect) - parseInt(a.expect));
+
+                latestExpect = history[0]?.expect;
+                
+                displayLatestDraw(history[0]);
+                updateOnlineStatus(true);
+                processNewData();
+                updateHistoryTable();
+
+                isRequesting = false;
+                return history;
+            } else {
+                updateOnlineStatus(false);
+                isRequesting = false;
+                return null;
+            }
+        }
+
+        function robustParseOpentime(opentime) {
+            // 处理各种格式的时间戳
+            if (typeof opentime === 'string' && opentime.includes('-')) {
+                // 直接是日期时间字符串，如 "2026-05-26 12:30:00"
+                const d = new Date(opentime);
+                if (!isNaN(d.getTime())) {
+                    return d.getTime();
+                }
+            }
+            
+            const ts = Number(opentime);
+            if (!ts || isNaN(ts)) return Date.now();
+            
+            // 处理毫秒/秒时间戳
+            if (ts < 1e12) {
+                // 是秒级时间戳
+                return ts * 1000;
+            }
+            return ts; // 已经是毫秒级时间戳
+        }
+
+        function getTypeFromSum(sum) {
+            if (sum <= 13) return '小';
+            if (sum >= 14) return '大';
+            return '';
+        }
+
+        function updateOnlineStatus(online) {
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            const autoBadge = document.getElementById('autoBadge');
+            const btnStart = document.getElementById('btnStart');
+            const btnStop = document.getElementById('btnStop');
+            if (online) {
+                indicator.className = 'status-indicator status-online';
+                statusText.textContent = '在线 - 已连接';
+                autoBadge.style.display = 'inline-block';
+                btnStart.style.display = 'none';
+                btnStop.style.display = 'inline-block';
+            } else {
+                indicator.className = 'status-indicator status-offline';
+                statusText.textContent = '离线 - 连接失败';
+                autoBadge.style.display = 'none';
+                btnStart.style.display = 'inline-block';
+                btnStop.style.display = 'none';
+            }
+        }
+
+        function updateOpentimeDisplay(opentime) {
+            const display = document.getElementById('opentimeDisplay');
+            const latestTimeEl = document.getElementById('latestTimeText');
+            if (opentime) {
+                const date = new Date(opentime);
+                const pad = n => String(n).padStart(2, '0');
+                const timeStr = `${pad(date.getMonth()+1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+                
+                // 同步更新两个开奖时间显示
+                if (display) display.textContent = `开奖时间: ${timeStr}`;
+                if (latestTimeEl) latestTimeEl.textContent = `开奖时间: ${timeStr}`;
+                
+                lastOpentime = opentime;
+                startCountdown();
+            }
+        }
+
+        // ================= 自动获取控制 =================
+        function startAutoFetch() {
+            if (autoFetchInterval) {
+                clearInterval(autoFetchInterval);
+            }
+            fetchDataFastest();
+            autoFetchInterval = setInterval(fetchDataFastest, 5000);
+            updateOnlineStatus(true);
+            document.getElementById('autoBadge').style.display = 'inline-block';
+            document.getElementById('btnStart').style.display = 'none';
+            document.getElementById('btnStop').style.display = 'inline-block';
+        }
+
+        function stopAutoFetch() {
+            if (autoFetchInterval) {
+                clearInterval(autoFetchInterval);
+                autoFetchInterval = null;
+            }
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+            updateOnlineStatus(false);
+            document.getElementById('autoBadge').style.display = 'none';
+            document.getElementById('btnStart').style.display = 'inline-block';
+            document.getElementById('btnStop').style.display = 'none';
+            document.getElementById('countdown').textContent = '';
+        }
+
+        function startCountdown() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+
+            let lastCheckedExpect = latestExpect;
+            
+            const updateCountdown = () => {
+                if (!lastOpentime) return;
+                const interval = 210 * 1000;
+                const now = Date.now();
+                const elapsed = now - lastOpentime;
+                const remaining = interval - (elapsed % interval);
+
+                const seconds = Math.floor(remaining / 1000);
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+
+                const countdownEl = document.getElementById('countdown');
+                if (countdownEl) {
+                    if (remaining < 30000) {
+                        countdownEl.style.color = '#ff6b6b';
+                        countdownEl.classList.add('countdown-urgent');
+                        countdownEl.textContent = `距下一期: ${mins}分${String(secs).padStart(2, '0')}秒`;
+                    } else {
+                        countdownEl.style.color = '#ffd93d';
+                        countdownEl.classList.remove('countdown-urgent');
+                        countdownEl.textContent = `距下一期: ${mins}分${String(secs).padStart(2, '0')}秒`;
+                    }
+                }
+                
+                // 倒计时小于30秒时，每秒检查新数据
+                if (remaining < 30000 && remaining > 0) {
+                    fetchDataFastest();
+                }
+                
+                // 倒计时结束或刚开始时，检查新数据
+                if (remaining <= 0 || remaining > interval * 0.9) {
+                    fetchDataFastest();
+                }
+                
+                // 检测是否有新期数，如果有，立即显示
+                if (latestExpect && latestExpect !== lastCheckedExpect) {
+                    lastCheckedExpect = latestExpect;
+                    // 新期数到了，确保立即显示
+                    const latestData = history && history[0];
+                    if (latestData) {
+                        displayLatestDraw(latestData);
+                    }
+                }
+            };
+
+            updateCountdown();
+            countdownInterval = setInterval(updateCountdown, 1000);
+        }
+
+        // ================= 数据处理与验证 =================
+        function processNewData() {
+            if (!latestExpect) {
+                return;
+            }
+
+            if (latestExpect !== lastFetchedExpect) {
+                if (lastFetchedExpect && currentPrediction) {
+                    const previousData = history.find(h => h.expect === lastFetchedExpect);
+                    if (previousData) {
+                        verifyAndAnalyze(previousData, currentPrediction);
+                    }
+                }
+
+                lastFetchedExpect = latestExpect;
+
+                const latestData = history.find(h => h.expect === latestExpect);
+                if (latestData && latestData.opentime) {
+                    updateOpentimeDisplay(latestData.opentime);
+                }
+
+                updateSequenceFromHistory();
+                analyzeAndPredict();
+                updateHistoryTable();
+            }
+            
+            // 如果是第一次加载并且没有预测，立即生成预测
+            if (!currentPrediction && history.length >= 2) {
+                analyzeAndPredict();
+            }
+        }
+
+        function updateSequenceFromHistory() {
+            if (history.length > 0) {
+                sequenceData.length = 0;
+                history.slice(0, 20).forEach(item => {
+                    sequenceData.push(item.nums);
+                });
+                updateSequenceDisplay();
+            }
+        }
+
+        function verifyAndAnalyze(actualData, prediction) {
+            const expect = actualData.expect;
+            const actualNums = actualData.nums;
+            const predictedNums = prediction.nums;
+
+            const isCorrect = actualNums[0] === predictedNums[0] &&
+                            actualNums[1] === predictedNums[1] &&
+                            actualNums[2] === predictedNums[2];
+
+            const result = {
+                expect: expect,
+                actual: actualNums,
+                predicted: predictedNums,
+                isCorrect: isCorrect,
+                timestamp: new Date().toLocaleString(),
+                opentime: actualData.opentime || null
+            };
+
+            predictionHistory.unshift(result);
+            if (predictionHistory.length > 20) {
+                predictionHistory = predictionHistory.slice(0, 20);
+            }
+            saveToStorage();
+
+            if (!isCorrect) {
+                errorRecords.push(result);
+                autoFillErrorBox(actualNums);
+
+                const thinkingHtml = deepThinkAnalysis(predictedNums, actualNums, discoveredPattern);
+                displayThinkingAnalysis(thinkingHtml);
+
+                if (sequenceData.length >= 1) {
+                    const previousNums = sequenceData[0];
+                    analyzeTransitionPattern(previousNums, actualNums);
+                }
+
+                sequenceData.unshift(actualNums);
+            if (sequenceData.length > 20) {
+                sequenceData.pop();
+            }
+            updateSequenceDisplay();
+
+                setTimeout(() => {
+                    const newPattern = findAndApplyNewPattern(actualNums);
+                    if (newPattern) {
+                        discoveredPattern = newPattern.pattern;
+                        const analysisEl = document.getElementById('algorithmContent');
+                        if (analysisEl) {
+                            analysisEl.innerHTML =
+                                newPattern.analysis +
+                                '<br><br><span style="color: #ff6b6b;">⚠️ 预测错误，已分析变化规律并生成新预测</span>';
+                            analysisEl.classList.add('new-prediction-animation');
+                            setTimeout(() => analysisEl.classList.remove('new-prediction-animation'), 600);
+                        }
+                    }
+                }, 800);
+
+                updateHistoryTable();
+            } else {
+                showSuccessMessage(expect);
+            }
+
+            lastVerifiedExpect = expect;
+            currentPrediction = null;
+            saveToStorage();
+            updateHistoryTable();
+        }
+
+        // ================= 辅助函数和完整功能 =================
+        function displayThinkingAnalysis(html) {
+            const existingAnalysis = document.getElementById('thinkingAnalysis');
+            if (existingAnalysis) {
+                existingAnalysis.remove();
+            }
+
+            const analysisDiv = document.createElement('div');
+            analysisDiv.id = 'thinkingAnalysis';
+            analysisDiv.className = 'thinking-analysis new-prediction-animation';
+            analysisDiv.innerHTML = `
+                <div class="thinking-title">🧠 深度思考分析</div>
+                <div class="thinking-content">${html}</div>
+            `;
+
+            const resultPanel = document.getElementById('resultPanel');
+            resultPanel.appendChild(analysisDiv);
+        }
+
+        function analyzeTransitionPattern(prev, curr) {
+            const log = [];
+            const posChanges = [];
+            for (let i = 0; i < 3; i++) {
+                const diff = (curr[i] - prev[i] + 10) % 10;
+                posChanges.push({
+                    position: i + 1,
+                    from: prev[i],
+                    to: curr[i],
+                    diff: diff,
+                    isClockwise: diff <= 5,
+                    steps: diff
+                });
+            }
+
+            log.push(`<strong>📍 位置变化分析 (${prev.join('-')} → ${curr.join('-')})</strong>`);
+            posChanges.forEach(p => {
+                const direction = p.isClockwise ? '顺时针' : '逆时针';
+                log.push(`  第${p.position}位: ${p.from} → ${p.to} (${direction} ${p.steps}步)`);
+            });
+
+            const prevSum = prev.reduce((a,b)=>a+b,0);
+            const currSum = curr.reduce((a,b)=>a+b,0);
+            const sumDiff = currSum - prevSum;
+            log.push(`<br><strong>📊 和值变化</strong>`);
+            log.push(`  上一期和值: ${prevSum}, 当前和值: ${currSum}`);
+            log.push(`  和值变化: ${sumDiff > 0 ? '+' : ''}${sumDiff}`);
+
+            const prevType = prevSum >= 14 ? '大' : '小';
+            const prevParity = prevSum % 2 === 0 ? '双' : '单';
+            const currType = currSum >= 14 ? '大' : '小';
+            const currParity = currSum % 2 === 0 ? '双' : '单';
+            log.push(`<br><strong>🎯 大小单双变化</strong>`);
+            log.push(`  ${prevType}+${prevParity} → ${currType}+${currParity}`);
+
+            log.push(`<br><strong>🔍 规律搜索</strong>`);
+            if (curr[0] === curr[1] || curr[1] === curr[2] || curr[0] === curr[2]) {
+                log.push(`  ⚡ 检测到重复数字!`);
+            }
+            const commonDigits = prev.filter(p => curr.includes(p));
+            if (commonDigits.length > 0) {
+                log.push(`  🔗 与上期相同数字: ${commonDigits.join(', ')}`);
+            }
+
+            displayTransitionAnalysis(log.join('<br>'));
+        }
+
+        function displayTransitionAnalysis(html) {
+            const existingAnalysis = document.getElementById('transitionAnalysis');
+            if (existingAnalysis) {
+                existingAnalysis.remove();
+            }
+            const analysisDiv = document.createElement('div');
+            analysisDiv.id = 'transitionAnalysis';
+            analysisDiv.className = 'error-analysis';
+            analysisDiv.style.borderLeftColor = '#48a3da';
+            analysisDiv.innerHTML = `
+                <div class="error-analysis-title">🔍 变化规律分析</div>
+                <div class="error-analysis-content">${html}</div>
+            `;
+            const resultPanel = document.getElementById('resultPanel');
+            resultPanel.appendChild(analysisDiv);
+        }
+
+        function findAndApplyNewPattern(actualNums) {
+            if (sequenceData.length < 2) return null;
+            const recentChanges = [];
+            for (let i = 0; i < Math.min(sequenceData.length - 1, 10); i++) {
+                const from = sequenceData[i + 1];
+                const to = sequenceData[i];
+                const changes = [];
+                for (let j = 0; j < 3; j++) {
+                    changes.push((to[j] - from[j] + 10) % 10);
+                }
+                recentChanges.push({
+                    from: from, to: to, changes: changes,
+                    sumDiff: to.reduce((a,b)=>a+b,0) - from.reduce((a,b)=>a+b,0)
+                });
+            }
+
+            const changePatterns = {
+                uniform: { name: '均匀变化', count: 0 },
+                alternating: { name: '交替变化', count: 0 },
+                specific: { name: '特定位置变化', count: 0 }
+            };
+
+            recentChanges.forEach(change => {
+                const avgChange = change.changes.reduce((a,b)=>a+b,0) / 3;
+                const variance = change.changes.reduce((a,c)=>a+Math.pow(c-avgChange,2),0) / 3;
+
+                if (variance < 2) {
+                    changePatterns.uniform.count++;
+                } else if (change.changes[0] === change.changes[2]) {
+                    changePatterns.alternating.count++;
+                } else {
+                    changePatterns.specific.count++;
+                }
+            });
+
+            let mostLikelyPattern = null;
+            let maxCount = 0;
+            for (const key in changePatterns) {
+                if (changePatterns[key].count > maxCount) {
+                    maxCount = changePatterns[key].count;
+                    mostLikelyPattern = key;
+                }
+            }
+
+            const lastNums = actualNums;
+            let newPrediction = null;
+            let analysisHtml = '';
+
+            if (mostLikelyPattern === 'uniform') {
+                const avgChanges = [0, 0, 0];
+                recentChanges.forEach(c => {
+                    for (let i = 0; i < 3; i++) {
+                        avgChanges[i] += c.changes[i];
+                    }
+                });
+                for (let i = 0; i < 3; i++) {
+                    avgChanges[i] = Math.round(avgChanges[i] / recentChanges.length);
+                }
+                newPrediction = avgChanges.map((c, i) => (lastNums[i] + c) % 10);
+                analysisHtml = `<strong>基于"均匀变化"规律</strong><br>`;
+                analysisHtml += `检测到各位置变化较均匀，平均变化: ${avgChanges.join(', ')}<br>`;
+                analysisHtml += `预测: ${lastNums.join(' → ')} → ${newPrediction.join('+')}=${newPrediction.reduce((a,b)=>a+b,0)}`;
+            } else if (mostLikelyPattern === 'alternating') {
+                const change01 = recentChanges.map(c => c.changes[0]);
+                const change02 = recentChanges.map(c => c.changes[2]);
+                const predChange0 = Math.round(change01.reduce((a,b)=>a+b,0) / change01.length);
+                const predChange2 = Math.round(change02.reduce((a,b)=>a+b,0) / change02.length);
+                const predChange1 = Math.round(recentChanges.map(c => c.changes[1]).reduce((a,b)=>a+b,0) / recentChanges.length);
+                newPrediction = [
+                    (lastNums[0] + predChange0) % 10,
+                    (lastNums[1] + predChange1) % 10,
+                    (lastNums[2] + predChange2) % 10
+                ];
+                analysisHtml = `<strong>基于"交替变化"规律</strong><br>`;
+                analysisHtml += `检测到1、3位同步变化，预测增量: ${predChange0}, ${predChange1}, ${predChange2}<br>`;
+                analysisHtml += `预测: ${lastNums.join(' → ')} → ${newPrediction.join('+')}=${newPrediction.reduce((a,b)=>a+b,0)}`;
+            } else {
+                const avgChanges = [0, 0, 0];
+                recentChanges.forEach(c => {
+                    for (let i = 0; i < 3; i++) {
+                        avgChanges[i] += c.changes[i];
+                    }
+                });
+                for (let i = 0; i < 3; i++) {
+                    avgChanges[i] = Math.round(avgChanges[i] / recentChanges.length);
+                }
+                newPrediction = avgChanges.map((c, i) => (lastNums[i] + c) % 10);
+                analysisHtml = `<strong>基于"特定位置变化"规律</strong><br>`;
+                analysisHtml += `预测增量: ${avgChanges.join(', ')}<br>`;
+                analysisHtml += `预测: ${lastNums.join(' → ')} → ${newPrediction.join('+')}=${newPrediction.reduce((a,b)=>a+b,0)}`;
+            }
+
+            if (newPrediction) {
+                currentPrediction = {
+                    expect: latestExpect ? String(parseInt(latestExpect) + 1) : null,
+                    nums: newPrediction
+                };
+                displayNewPrediction(newPrediction, analysisHtml);
+            }
+
+            return { pattern: discoveredPattern, analysis: analysisHtml, prediction: newPrediction };
+        }
+
+        function displayNewPrediction(prediction, analysisHtml) {
+            const container = document.getElementById('predictionResult');
+            const lastData = sequenceData[0];
+            const latestExpectNum = latestExpect;
+
+            if (latestExpectNum) {
+                const nextExpect = String(parseInt(latestExpectNum) + 1);
+                container.innerHTML = `
+                    <div class="result-equation new-prediction-animation">
+                        <div style="font-size: 1.3rem; color: #ff6b6b;">⚠️ 预测错误，重新分析</div>
+                        <div style="margin-top: 8px; font-size: 1rem;">最新开奖: ${lastData.join(' + ')} = ${lastData.reduce((a,b)=>a+b,0)}</div>
+                    </div>
+
+                    <div class="error-analysis" style="margin-top: 15px;">
+                        <div class="error-analysis-title">🧠 重新分析规律</div>
+                        <div class="error-analysis-content">${analysisHtml}</div>
+                    </div>
+
+                    <div class="prediction-result new-prediction-animation" style="margin-top: 20px; border: 2px solid #6bcb77;">
+                        <div style="margin-bottom: 15px; font-size: 1.2rem; color: #6bcb77;">🎯 期号 ${nextExpect} 重新预测</div>
+                        <div class="prediction-row">
+                            <span class="label">预测号码:</span>
+                            <span class="value"><strong style="font-size: 1.5rem; color: #6bcb77;">${prediction[0]} + ${prediction[1]} + ${prediction[2]} = ${prediction.reduce((a,b)=>a+b,0)}</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="success-box new-prediction-animation" style="margin-top: 15px;">
+                        <strong>✓ 已根据实际规律重新生成预测</strong><br>
+                        <button class="btn btn-secondary" onclick="confirmPrediction(${prediction[0]}, ${prediction[1]}, ${prediction[2]})" style="margin-top: 10px;">如果正确，点击确认</button>
+                    </div>
+                `;
+            }
+        }
+
+        function autoFillErrorBox(nums) {
+            const inputs = [
+                document.getElementById('correctNum1'),
+                document.getElementById('correctNum2'),
+                document.getElementById('correctNum3')
+            ];
+
+            inputs.forEach((input, index) => {
+                setTimeout(() => {
+                    input.value = nums[index];
+                    input.classList.add('error-fill-animation');
+                    document.getElementById('correctSum').textContent = nums[0] + nums[1] + nums[2];
+                    setTimeout(() => {
+                        input.classList.remove('error-fill-animation');
+                    }, 500);
+                }, index * 200);
+            });
+        }
+
+        function deepThinkAnalysis(prevPredicted, actualNums, pattern) {
+            const analysis = [];
+            analysis.push('<span class="question">❓ 预测为什么会错</span><br><br>');
+            analysis.push('<strong>📍 位置对比分析</strong><br>');
+            for (let i = 0; i < 3; i++) {
+                const diff = (actualNums[i] - prevPredicted[i] + 10) % 10;
+                const direction = diff <= 5 ? '顺时针' : '逆时针';
+                analysis.push(`  第${i+1}位: 预测${prevPredicted[i]} → 实际${actualNums[i]} (${direction} ${diff}步)`);
+            }
+
+            const predSum = prevPredicted.reduce((a,b)=>a+b,0);
+            const actualSum = actualNums.reduce((a,b)=>a+b,0);
+            analysis.push(`<br><strong>📊 和值差异</strong><br>`);
+            analysis.push(`  预测和值: ${predSum}, 实际和值: ${actualSum}`);
+            analysis.push(`  差值: ${actualSum - predSum > 0 ? '+' : ''}${actualSum - predSum}`);
+
+            analysis.push(`<br><span class="question">🤔 深度思考</span><br>`);
+            analysis.push(`  1. 彩票是随机事件，短期数据不足以预测`);
+            analysis.push(`  2. 变化模式可能已经改变`);
+            analysis.push(`  3. 需要根据实际开奖重新学习新的规律`);
+            analysis.push(`<br><span class="answer">✓ 采取的对策</span><br>`);
+            analysis.push(`  1. 将实际开奖结果填入序列`);
+            analysis.push(`  2. 重新分析新的变化规律`);
+            analysis.push(`  3. 基于新规律生成下一期预测`);
+
+            return analysis.join('<br>');
+        }
+
+        function showSuccessMessage(expect) {
+            const errorAnalysis = document.getElementById('errorAnalysis');
+            const transitionAnalysis = document.getElementById('transitionAnalysis');
+            const msg = `
+                <div class="error-analysis-title" style="color: #6bcb77;">✓ 预测正确!</div>
+                <div class="error-analysis-content">
+                    <p>期号 ${expect} 预测成功命中</p>
+                    <p style="color: #6bcb77;"><strong>算法继续有效，保持当前策略</strong></p>
+                </div>
+            `;
+            if (errorAnalysis) {
+                errorAnalysis.innerHTML = msg;
+            }
+            if (transitionAnalysis) {
+                transitionAnalysis.remove();
+            }
+        }
+
+        function updateHistoryTable() {
+            const tbody = document.getElementById('historyTableBody');
+            if (!tbody) return;
+
+            if (predictionHistory.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #aaa;">暂无历史记录，请等待下一期开奖验证</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = predictionHistory.slice(0, 20).map(record => {
+                const actualStr = record.actual.join('+');
+                const predictedStr = record.predicted.join('+');
+                const status = record.isCorrect ?
+                    '<span style="color: #6bcb77; font-weight: bold; font-size: 1.1rem;">对</span>' :
+                    '<span style="color: #ff6b6b; font-weight: bold; font-size: 1.1rem;">错</span>';
+
+                let opentimeStr = '-';
+                if (record.opentime) {
+                    const date = new Date(record.opentime);
+                    const pad = n => String(n).padStart(2, '0');
+                    opentimeStr = `${pad(date.getMonth()+1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+                }
+
+                return `
+                    <tr class="${record.isCorrect ? 'history-correct' : 'history-wrong'}">
+                        <td>${record.expect}</td>
+                        <td>${actualStr}</td>
+                        <td>${predictedStr}</td>
+                        <td>${record.actual.reduce((a,b)=>a+b,0)}</td>
+                        <td>${status}</td>
+                        <td>${opentimeStr}</td>
+                        <td>${record.timestamp}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateSequenceDisplay() {
+            const sequenceList = document.querySelector('.sequence-list');
+            if (!sequenceList) return;
+
+            sequenceList.innerHTML = sequenceData.map((item, index) => {
+                const sum = item.reduce((a,b)=>a+b,0);
+                const isCurrent = index === sequenceData.length - 1;
+                const className = isCurrent ? 'sequence-item current' : 'sequence-item';
+                const arrow = index < sequenceData.length - 1 ? '<span class="arrow-icon">→</span>' : '';
+                return `${arrow}<span class="${className}">${item[0]}+${item[1]}+${item[2]}=${sum}</span>`;
+            }).join('');
+        }
+
+        // ================= 规律分析与预测 =================
+        function analyzeAndPredict() {
+            if (sequenceData.length < 2) {
+                document.getElementById('algorithmContent').innerHTML = '数据不足，需要至少2组数据';
+                return;
+            }
+
+            discoveredPattern = findPattern(sequenceData);
+
+            if (discoveredPattern) {
+                document.getElementById('algorithmContent').innerHTML = discoveredPattern.description;
+
+                const lastItem = sequenceData[0];
+                const prediction = applyPattern(lastItem, discoveredPattern);
+                const predictionSum = prediction[0] + prediction[1] + prediction[2];
+
+                const nextExpectNum = latestExpect ? String(parseInt(latestExpect) + 1) : null;
+                currentPrediction = {
+                    expect: nextExpectNum,
+                    nums: prediction
+                };
+                saveToStorage();
+
+                displayPrediction(prediction, predictionSum, true);
+            } else {
+                document.getElementById('algorithmContent').innerHTML = '未能识别规律，请提供更多数据或手动输入正确答案';
+            }
+        }
+
+        function findPattern(data) {
+            const patterns = [];
+            patterns.push({
+                name: '位置增量规律',
+                check: (data) => {
+                    const pos1 = data.map(d => d[0]);
+                    const pos2 = data.map(d => d[1]);
+                    const pos3 = data.map(d => d[2]);
+                    const diff1 = pos1.map((v, i) => i > 0 ? (v - pos1[i-1] + 10) % 10 : 0);
+                    const diff2 = pos2.map((v, i) => i > 0 ? (v - pos2[i-1] + 10) % 10 : 0);
+                    const diff3 = pos3.map((v, i) => i > 0 ? (v - pos3[i-1] + 10) % 10 : 0);
+                    const avgDiff1 = diff1.slice(1).reduce((a,b)=>a+b,0) / (diff1.length-1);
+                    const avgDiff2 = diff2.slice(1).reduce((a,b)=>a+b,0) / (diff2.length-1);
+                    const avgDiff3 = diff3.slice(1).reduce((a,b)=>a+b,0) / (diff3.length-1);
+                    const rounded1 = Math.round(avgDiff1);
+                    const rounded2 = Math.round(avgDiff2);
+                    const rounded3 = Math.round(avgDiff3);
+
+                    return {
+                        type: 'position_modulo',
+                        diffs: [rounded1, rounded2, rounded3],
+                        weights: [1/avgDiff1, 1/avgDiff2, 1/avgDiff3].map(w => isFinite(w) ? w : 1),
+                        description: `<strong>位置增量规律</strong><br>
+                            A位置平均增量: ${avgDiff1.toFixed(2)} (取整: +${rounded1})<br>
+                            B位置平均增量: ${avgDiff2.toFixed(2)} (取整: +${rounded2})<br>
+                            C位置平均增量: ${avgDiff3.toFixed(2)} (取整: +${rounded3})<br><br>
+                            <em>公式: new = (old + delta) % 10</em>`
+                    };
+                }
+            });
+
+            patterns.push({
+                name: '总和变化规律',
+                check: (data) => {
+                    const sums = data.map(d => d[0] + d[1] + d[2]);
+                    const recentSums = sums.slice(-5);
+                    const avgChange = recentSums.reduce((acc, sum, i) => {
+                        if (i === 0) return 0;
+                        return acc + (sum - recentSums[i-1]);
+                    }, 0) / (recentSums.length - 1);
+                    const trend = avgChange > 0.5 ? '上升' : avgChange < -0.5 ? '下降' : '平稳';
+                    return {
+                        type: 'sum_trend',
+                        sumDelta: Math.round(avgChange),
+                        trend: trend,
+                        description: `<strong>总和变化规律</strong><br>
+                            近期趋势: ${trend}<br>
+                            平均变化: ${avgChange > 0 ? '+' : ''}${avgChange.toFixed(2)}<br>
+                            预测下一个总和变化: ${Math.round(avgChange) > 0 ? '+' : ''}${Math.round(avgChange)}<br><br>
+                            <em>根据趋势预测和值</em>`
+                    };
+                }
+            });
+
+            for (const pattern of patterns) {
+                try {
+                    const result = pattern.check(data);
+                    if (result) {
+                        return { ...result, name: pattern.name };
+                    }
+                } catch(e) {}
+            }
+
+            return {
+                type: 'fallback',
+                description: '未找到明确规律，使用统计预测',
+                predict: (last) => {
+                    const avgA = Math.round(data.slice(-5).reduce((sum, d) => sum + d[0], 0) / 5);
+                    const avgB = Math.round(data.slice(-5).reduce((sum, d) => sum + d[1], 0) / 5);
+                    const avgC = Math.round(data.slice(-5).reduce((sum, d) => sum + d[2], 0) / 5);
+                    return [avgA, avgB, avgC];
+                }
+            };
+        }
+
+        function applyPattern(last, pattern) {
+            if (pattern.type === 'position_modulo') {
+                return [
+                    (last[0] + pattern.diffs[0] + 10) % 10,
+                    (last[1] + pattern.diffs[1] + 10) % 10,
+                    (last[2] + pattern.diffs[2] + 10) % 10
+                ];
+            } else if (pattern.predict) {
+                return pattern.predict(last);
+            }
+
+            return [
+                Math.round(Math.random() * 5 + 2),
+                Math.round(Math.random() * 5),
+                Math.round(Math.random() * 5 + 2)
+            ];
+        }
+
+        function displayPrediction(prediction, sum, isMatch) {
+            const container = document.getElementById('predictionResult');
+            const lastData = sequenceData[0];
+            const latestExpectNum = latestExpect;
+
+            let resultComparison = '';
+            if (predictionHistory.length > 0) {
+                const latestRecord = predictionHistory[0];
+                resultComparison = `
+                    <div class="prediction-result new-prediction-animation">
+                        <div style="margin-bottom: 15px; font-size: 1.2rem; color: #ffd93d;">📊 最近一期开奖结果对比</div>
+                        <div class="prediction-row">
+                            <span class="label">期号:</span>
+                            <span class="value">${latestRecord.expect}</span>
+                        </div>
+                        <div class="prediction-row">
+                            <span class="label">预测:</span>
+                            <span class="value">${latestRecord.predicted.join(' + ')} = ${latestRecord.predicted.reduce((a,b)=>a+b,0)}</span>
+                        </div>
+                        <div class="prediction-row">
+                            <span class="label">实际:</span>
+                            <span class="value">${latestRecord.actual.join(' + ')} = ${latestRecord.actual.reduce((a,b)=>a+b,0)}</span>
+                        </div>
+                        <div class="prediction-row">
+                            <span class="label">结果:</span>
+                            <span class="status ${latestRecord.isCorrect ? 'correct' : 'wrong'}">
+                                ${latestRecord.isCorrect ? '✓ 正确' : '✗ 错误'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            let nextPredictionHtml = '';
+            if (latestExpectNum) {
+                const nextExpect = String(parseInt(latestExpectNum) + 1);
+                nextPredictionHtml = `
+                    <div class="prediction-result new-prediction-animation" style="margin-top: 20px; border: 2px solid #ffd93d;">
+                        <div style="margin-bottom: 15px; font-size: 1.2rem; color: #ffd93d;">🎯 期号 ${nextExpect} 预测</div>
+                        <div class="prediction-row">
+                            <span class="label">预测号码:</span>
+                            <span class="value"><strong style="font-size: 1.5rem; color: #6bcb77;">${prediction[0]} + ${prediction[1]} + ${prediction[2]} = ${sum}</strong></span>
+                        </div>
+                        <div class="prediction-row">
+                            <span class="label">预测方法:</span>
+                            <span class="value">${discoveredPattern?.name || '未知'}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = `
+                <div class="result-equation new-prediction-animation">
+                    <div style="font-size: 1.3rem; color: #6bcb77;">${lastData.join(' + ')} = ${lastData.reduce((a,b)=>a+b,0)}</div>
+                    <div style="margin-top: 8px; font-size: 1rem;">期号: ${latestExpect || '--'}</div>
+                </div>
+                ${resultComparison}
+                ${nextPredictionHtml}
+                <div class="success-box new-prediction-animation">
+                    <strong>✓ 算法分析完成</strong><br>
+                    使用方法: ${discoveredPattern?.name || '未知'}<br>
+                </div>
+            `;
+        }
+
+        function confirmPrediction(a, b, c) {
+            sequenceData.unshift([a, b, c]);
+            if (sequenceData.length > 20) {
+                sequenceData.pop();
+            }
+            updateSequenceDisplay();
+            analyzeAndPredict();
+        }
+
+        function updateSequence() {
+            const num1 = parseInt(document.getElementById('correctNum1').value);
+            const num2 = parseInt(document.getElementById('correctNum2').value);
+            const num3 = parseInt(document.getElementById('correctNum3').value);
+
+            if (isNaN(num1) || isNaN(num2) || isNaN(num3)) {
+                alert('请输入三个有效的数字（0-9）');
+                return;
+            }
+
+            if (num1 < 0 || num1 > 9 || num2 < 0 || num2 > 9 || num3 < 0 || num3 > 9) {
+                alert('数字必须在0-9之间');
+                return;
+            }
+
+            sequenceData.unshift([num1, num2, num3]);
+            if (sequenceData.length > 20) {
+                sequenceData.pop();
+            }
+
+            document.getElementById('correctSum').textContent = num1 + num2 + num3;
+            updateSequenceDisplay();
+
+            document.getElementById('correctNum1').value = '';
+            document.getElementById('correctNum2').value = '';
+            document.getElementById('correctNum3').value = '';
+            document.getElementById('correctSum').textContent = '?';
+
+            analyzeAndPredict();
+        }
+
+        // ================= 刮刮卡功能 =================
+        function initScratchCard() {
+            scratchCanvas = document.getElementById('scratchCardCanvas');
+            if (!scratchCanvas) return;
+            
+            const hint = document.getElementById('scratchHint');
+            if (hint) hint.classList.remove('scratch-hint-hidden');
+            
+            // 设置canvas尺寸
+            const wrapper = scratchCanvas.parentElement;
+            scratchCanvas.width = wrapper.offsetWidth || 400;
+            scratchCanvas.height = wrapper.offsetHeight || 150;
+            
+            scratchCtx = scratchCanvas.getContext('2d');
+            
+            // 绘制刮刮卡涂层
+            drawScratchCover();
+            
+            // 绑定事件
+            bindScratchEvents();
+        }
+
+        function drawScratchCover() {
+            if (!scratchCtx) return;
+            
+            // 创建渐变背景
+            const gradient = scratchCtx.createLinearGradient(0, 0, scratchCanvas.width, scratchCanvas.height);
+            gradient.addColorStop(0, '#ff6b6b');
+            gradient.addColorStop(0.5, '#ffd93d');
+            gradient.addColorStop(1, '#ff6b6b');
+            
+            scratchCtx.fillStyle = gradient;
+            scratchCtx.fillRect(0, 0, scratchCanvas.width, scratchCanvas.height);
+            
+            // 添加纹理效果
+            scratchCtx.globalCompositeOperation = 'multiply';
+            for (let i = 0; i < 50; i++) {
+                scratchCtx.beginPath();
+                scratchCtx.arc(
+                    Math.random() * scratchCanvas.width,
+                    Math.random() * scratchCanvas.height,
+                    Math.random() * 20 + 5,
+                    0,
+                    Math.PI * 2
+                );
+                scratchCtx.fillStyle = `rgba(100, 100, 100, ${Math.random() * 0.3})`;
+                scratchCtx.fill();
+            }
+            
+            scratchCtx.globalCompositeOperation = 'source-over';
+        }
+
+        function bindScratchEvents() {
+            if (!scratchCanvas) return;
+            
+            // 鼠标事件
+            scratchCanvas.addEventListener('mousedown', startScratch);
+            scratchCanvas.addEventListener('mousemove', scratch);
+            scratchCanvas.addEventListener('mouseup', stopScratch);
+            scratchCanvas.addEventListener('mouseleave', stopScratch);
+            
+            // 触摸事件
+            scratchCanvas.addEventListener('touchstart', startScratchTouch);
+            scratchCanvas.addEventListener('touchmove', scratchTouch);
+            scratchCanvas.addEventListener('touchend', stopScratch);
+        }
+
+        function getCanvasCoords(e) {
+            const rect = scratchCanvas.getBoundingClientRect();
+            return {
+                x: (e.clientX - rect.left) * (scratchCanvas.width / rect.width),
+                y: (e.clientY - rect.top) * (scratchCanvas.height / rect.height)
+            };
+        }
+
+        function getCanvasCoordsTouch(e) {
+            const rect = scratchCanvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            return {
+                x: (touch.clientX - rect.left) * (scratchCanvas.width / rect.width),
+                y: (touch.clientY - rect.top) * (scratchCanvas.height / rect.height)
+            };
+        }
+
+        function startScratch(e) {
+            isScratching = true;
+            const coords = getCanvasCoords(e);
+            scratchAt(coords.x, coords.y);
+        }
+
+        function startScratchTouch(e) {
+            e.preventDefault();
+            isScratching = true;
+            const coords = getCanvasCoordsTouch(e);
+            scratchAt(coords.x, coords.y);
+        }
+
+        function scratch(e) {
+            if (!isScratching) return;
+            const coords = getCanvasCoords(e);
+            scratchAt(coords.x, coords.y);
+            checkRevealProgress();
+        }
+
+        function scratchTouch(e) {
+            e.preventDefault();
+            if (!isScratching) return;
+            const coords = getCanvasCoordsTouch(e);
+            scratchAt(coords.x, coords.y);
+            checkRevealProgress();
+        }
+
+        function scratchAt(x, y) {
+            if (!scratchCtx) return;
+            
+            scratchCtx.globalCompositeOperation = 'destination-out';
+            
+            // 绘制刮开的圆形区域
+            scratchCtx.beginPath();
+            scratchCtx.arc(x, y, 30, 0, Math.PI * 2);
+            scratchCtx.fill();
+            
+            // 添加一些随机效果
+            scratchCtx.beginPath();
+            scratchCtx.arc(x - 15, y - 15, 15, 0, Math.PI * 2);
+            scratchCtx.fill();
+            scratchCtx.beginPath();
+            scratchCtx.arc(x + 15, y + 15, 15, 0, Math.PI * 2);
+            scratchCtx.fill();
+        }
+
+        function stopScratch() {
+            isScratching = false;
+            checkRevealProgress();
+        }
+
+        function checkRevealProgress() {
+            if (!scratchCanvas || !scratchCtx || scratchRevealed) return;
+            
+            const imageData = scratchCtx.getImageData(0, 0, scratchCanvas.width, scratchCanvas.height);
+            let transparentPixels = 0;
+            
+            // 每10个像素检查一次，提高效率
+            for (let i = 3; i < imageData.data.length; i += 40) {
+                if (imageData.data[i] === 0) {
+                    transparentPixels++;
+                }
+            }
+            
+            const totalPixels = imageData.data.length / 40;
+            const revealPercentage = transparentPixels / totalPixels;
+            
+            // 如果超过50%区域被刮开，自动全部揭示
+            if (revealPercentage > 0.5) {
+                revealAllScratch();
+            }
+        }
+
+        function revealAllScratch() {
+            if (scratchRevealed) return;
+            
+            scratchRevealed = true;
+            
+            // 隐藏提示
+            const hint = document.getElementById('scratchHint');
+            if (hint) hint.classList.add('scratch-hint-hidden');
+            
+            // 清除canvas
+            if (scratchCanvas && scratchCtx) {
+                scratchCtx.clearRect(0, 0, scratchCanvas.width, scratchCanvas.height);
+            }
+            
+            // 获取最新开奖数据，确保普通显示区域有内容
+            const latestData = history && history[0];
+            if (latestData) {
+                // 确保最新开奖数据已经更新到普通显示区域
+                const nums = latestData.nums;
+                const sum = nums.reduce((a, b) => a + b, 0);
+                const tag = sum >= 14 ? (sum % 2 === 0 ? '大+双' : '大+单') : (sum % 2 === 0 ? '小+双' : '小+单');
+                
+                const elDraw = document.getElementById('latestDrawText');
+                const elTag = document.getElementById('latestTagText');
+                if (elDraw) elDraw.textContent = `${nums[0]} + ${nums[1]} + ${nums[2]} = ${sum}`;
+                if (elTag) elTag.textContent = tag;
+            }
+            
+            // 添加淡出动画
+            const scratchContainer = document.getElementById('scratchCardContainer');
+            if (scratchContainer) {
+                scratchContainer.style.transition = 'opacity 0.5s ease';
+                scratchContainer.style.opacity = '0';
+                
+                setTimeout(() => {
+                    // 切换到普通显示
+                    if (scratchContainer) scratchContainer.style.display = 'none';
+                    if (scratchContainer) scratchContainer.style.opacity = '1';
+                    
+                    const normalDisplay = document.getElementById('normalResultDisplay');
+                    if (normalDisplay) normalDisplay.style.display = 'block';
+                    
+                    const revealBtnContainer = document.getElementById('revealBtnContainer');
+                    if (revealBtnContainer) revealBtnContainer.style.display = 'none';
+                }, 500);
+            }
+        }
+
+        window.onload = function() {
+            loadFromStorage();
+            updateHistoryTable();
+            startAutoFetch();
+        };
+    </script>
+</body>
+</html>
