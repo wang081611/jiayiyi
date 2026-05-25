@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
+<meta http-equiv="refresh" content="30">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <title>开奖预测综合系统</title>
 <style>
@@ -95,6 +96,10 @@ body { margin: 0; padding: 0; }
       <li onclick="showModule('smart')">智能预测</li>
       <li onclick="showModule('kaijiang')">开奖模块</li>
     </ul>
+    <div style="position:absolute;bottom:20px;left:20px;color:#666;font-size:11px;">
+      <div>🔄 自动刷新: 30秒</div>
+      <div id="serverStatus" style="margin-top:5px;">服务器: <span style="color:#ff6b6b;">未连接</span></div>
+    </div>
   </div>
   <div class="module-main">
 
@@ -289,6 +294,22 @@ document.querySelectorAll('.module-nav li').forEach((li, idx) => {
     showModule(names[idx]);
   };
 });
+
+// 服务器连接状态检查
+function checkServerStatus() {
+  const statusEl = document.getElementById('serverStatus');
+  fetch('server.php', { method: 'HEAD', cache: 'no-cache' })
+    .then(() => {
+      statusEl.innerHTML = '服务器: <span style="color:#6bcb77;">已连接</span>';
+    })
+    .catch(() => {
+      statusEl.innerHTML = '服务器: <span style="color:#ff6b6b;">未连接</span>';
+    });
+}
+
+// 每10秒检查一次服务器状态
+setInterval(checkServerStatus, 10000);
+checkServerStatus();
 </script>
 
 <!-- ========== pattern模块JS ========== -->
